@@ -917,11 +917,9 @@ input:checked + .slider-round:before {
 .shap-bar-canvas {
   position: relative;
   height: 22px;
-  background: rgba(255, 255, 255, 0.02);
+  background: rgba(255, 255, 255, 0.04);
   border-radius: 4px;
   overflow: hidden;
-  display: flex;
-  align-items: center;
 }
 
 .shap-center-axis {
@@ -929,26 +927,31 @@ input:checked + .slider-round:before {
   left: 50%;
   top: 0;
   bottom: 0;
-  width: 1px;
-  background: rgba(255, 255, 255, 0.25);
+  width: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-50%);
   z-index: 2;
 }
 
 .shap-bar-fill {
   position: absolute;
-  height: 100%;
+  top: 2px;
+  bottom: 2px;
   border-radius: 3px;
-  transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1), left 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: width 0.3s ease;
+  z-index: 1;
 }
 
 .shap-bar-fill.positive {
   background: linear-gradient(90deg, #ef4444, #f87171);
   left: 50%;
+  right: auto;
 }
 
 .shap-bar-fill.negative {
-  background: linear-gradient(90deg, #10b981, #34d399);
+  background: linear-gradient(270deg, #10b981, #34d399);
   right: 50%;
+  left: auto;
 }
 
 .shap-val-text {
@@ -960,6 +963,18 @@ input:checked + .slider-round:before {
 
 .shap-val-text.pos { color: #f87171; }
 .shap-val-text.neg { color: #34d399; }
+
+body.light-theme .shap-bar-canvas {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+body.light-theme .shap-center-axis {
+  background: rgba(0, 0, 0, 0.25);
+}
+
+body.light-theme .shap-bar-row {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
 
 /* Age Slider Card (no reference defined) */
 .age-card {

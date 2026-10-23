@@ -12,6 +12,15 @@ let debounceTimer = null;
 let presetsList = [];
 let decisionSpaceData = null;
 let currentProjection = 'MCV_RBC'; // 'MCV_RBC' or 'MCV_RDW'
+let apiAvailable = null; // null = untried, true = connected, false = fallback to client
+
+// Universal Model Bundle Accessor
+function getModelBundle() {
+  if (typeof window !== 'undefined' && window.THALA_MODEL_BUNDLE) return window.THALA_MODEL_BUNDLE;
+  if (typeof THALA_MODEL_BUNDLE !== 'undefined') return THALA_MODEL_BUNDLE;
+  if (typeof globalThis !== 'undefined' && globalThis.THALA_MODEL_BUNDLE) return globalThis.THALA_MODEL_BUNDLE;
+  return null;
+}
 
 const PARAM_DEFAULTS = {
   rbc_count: 5.82,
@@ -32,7 +41,16 @@ const REF_RANGES = {
   mch: { min: 27.0, max: 33.0 },
   mchc: { min: 31.0, max: 36.0 },
   rdw_cv: { min: 11.5, max: 15.0 },
-  mentzer_index: { min: 13.0, max: 35.0 }
+  mentzer_index: { min: 13.0, max: 35.0 },
+  // Display name aliases for CBC report evaluation
+  'RBC Count': { min: 3.80, max: 5.80 },
+  'Hemoglobin': { min: 11.5, max: 16.5 },
+  'HCT': { min: 35.0, max: 48.0 },
+  'MCV': { min: 80.0, max: 100.0 },
+  'MCH': { min: 27.0, max: 33.0 },
+  'MCHC': { min: 31.0, max: 36.0 },
+  'RDW-CV': { min: 11.5, max: 15.0 },
+  'Mentzer Index': { min: 13.0, max: 35.0 }
 };
 
 const FEATURE_DESCRIPTIONS = {
@@ -131,6 +149,20 @@ const elements = {
   modalDownloadPdfActionBtn: document.getElementById('modalDownloadPdfActionBtn')
 };
 
+// --- HELPER FOR ROBUST PARAMETER EXTRACTION ---
+function getParamVal(param) {
+  const numInput = document.getElementById(`num_${param}`);
+  const slider = document.getElementById(`slider_${param}`);
+  
+  if (numInput && numInput.value !== '' && !isNaN(parseFloat(numInput.value))) {
+    return parseFloat(numInput.value);
+  }
+  if (slider && slider.value !== '' && !isNaN(parseFloat(slider.value))) {
+    return parseFloat(slider.value);
+  }
+  return PARAM_DEFAULTS[param] !== undefined ? PARAM_DEFAULTS[param] : 0;
+}
+
 // --- INITIALIZATION ---
 document.addEventListener('DOMContentLoaded', async () => {
   initTheme();
@@ -138,9 +170,29 @@ document.addEventListener('DOMContentLoaded', async () => {
   setupParamSync();
   setupAgeSync();
   setupDecisionSpaceControls();
-  await loadPresets();
-  await loadDecisionSpaceData();
-  triggerInference();
+
+  // Load client presets & decision space cohort synchronously first so UI is ready immediately
+  const bundle = getModelBundle();
+  if (bundle) {
+    if (bundle.presets) {
+      presetsList = bundle.presets;
+      bindPresetChips();
+    }
+    if (bundle.cohort) {
+      decisionSpaceData = {
+        btt_points: bundle.cohort.btt_points,
+        ida_points: bundle.cohort.ida_points
+      };
+      renderDecisionSpace();
+    }
+  }
+
+  // Trigger initial inference immediately
+  await triggerInference();
+
+  // Background check for API if hosted locally
+  loadPresets();
+  loadDecisionSpaceData();
 });
 
 // --- THEME MANAGEMENT ---
@@ -179,14 +231,26 @@ function updateThemeIcon(isLight) {
 function setupAgeSync() {
   if (!elements.sliderAge || !elements.numAge) return;
 
+  const handleAgeChange = (val) => {
+    const num = parseFloat(val);
+    if (!isNaN(num)) {
+      elements.sliderAge.value = num;
+      elements.numAge.value = num;
+      debouncedInference();
+    }
+  };
+
   elements.sliderAge.addEventListener('input', (e) => {
     elements.numAge.value = e.target.value;
     debouncedInference();
   });
 
   elements.numAge.addEventListener('input', (e) => {
-    elements.sliderAge.value = e.target.value;
-    debouncedInference();
+    handleAgeChange(e.target.value);
+  });
+
+  elements.numAge.addEventListener('change', (e) => {
+    handleAgeChange(e.target.value);
   });
 }
 
@@ -202,43 +266,86 @@ function setupParamSync() {
 
     slider.addEventListener('input', (e) => {
       numInput.value = e.target.value;
-      updateParamBadge(param, parseFloat(e.target.value));
+      const val = parseFloat(e.target.value);
+      updateParamBadge(param, val);
+
+      if (param === 'mentzer_index' && elements.autoSyncMentzer && elements.autoSyncMentzer.checked) {
+        elements.autoSyncMentzer.checked = false;
+        if (elements.mentzerSyncStatus) {
+          elements.mentzerSyncStatus.textContent = 'Manual override';
+        }
+      }
+
       handleAutoMentzer(param);
       renderDecisionSpace();
       debouncedInference();
     });
 
     numInput.addEventListener('input', (e) => {
-      slider.value = e.target.value;
-      updateParamBadge(param, parseFloat(e.target.value));
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val)) {
+        slider.value = e.target.value;
+        updateParamBadge(param, val);
+      }
+
+      if (param === 'mentzer_index' && elements.autoSyncMentzer && elements.autoSyncMentzer.checked) {
+        elements.autoSyncMentzer.checked = false;
+        if (elements.mentzerSyncStatus) {
+          elements.mentzerSyncStatus.textContent = 'Manual override';
+        }
+      }
+
       handleAutoMentzer(param);
       renderDecisionSpace();
       debouncedInference();
     });
 
-    updateParamBadge(param, parseFloat(slider.value));
+    numInput.addEventListener('change', (e) => {
+      const val = parseFloat(e.target.value);
+      if (!isNaN(val)) {
+        slider.value = e.target.value;
+        updateParamBadge(param, val);
+      }
+
+      if (param === 'mentzer_index' && elements.autoSyncMentzer && elements.autoSyncMentzer.checked) {
+        elements.autoSyncMentzer.checked = false;
+        if (elements.mentzerSyncStatus) {
+          elements.mentzerSyncStatus.textContent = 'Manual override';
+        }
+      }
+
+      handleAutoMentzer(param);
+      renderDecisionSpace();
+      triggerInference();
+    });
+
+    updateParamBadge(param, getParamVal(param));
   });
 
-  elements.autoSyncMentzer.addEventListener('change', (e) => {
-    const isAuto = e.target.checked;
-    elements.mentzerSyncStatus.textContent = isAuto ? 'Auto-calculated' : 'Manual override';
-    if (isAuto) {
-      calculateAndSetMentzer();
-      renderDecisionSpace();
-      debouncedInference();
-    }
-  });
+  if (elements.autoSyncMentzer) {
+    elements.autoSyncMentzer.addEventListener('change', (e) => {
+      const isAuto = e.target.checked;
+      if (elements.mentzerSyncStatus) {
+        elements.mentzerSyncStatus.textContent = isAuto ? 'Auto-calculated' : 'Manual override';
+      }
+      if (isAuto) {
+        calculateAndSetMentzer();
+        renderDecisionSpace();
+        debouncedInference();
+      }
+    });
+  }
 }
 
 function handleAutoMentzer(changedParam) {
-  if (elements.autoSyncMentzer.checked && (changedParam === 'mcv' || changedParam === 'rbc_count')) {
+  if (elements.autoSyncMentzer && elements.autoSyncMentzer.checked && (changedParam === 'mcv' || changedParam === 'rbc_count')) {
     calculateAndSetMentzer();
   }
 }
 
 function calculateAndSetMentzer() {
-  const mcv = parseFloat(document.getElementById('slider_mcv').value) || 60;
-  const rbc = parseFloat(document.getElementById('slider_rbc_count').value) || 5;
+  const mcv = getParamVal('mcv');
+  const rbc = getParamVal('rbc_count');
   const calculatedMentzer = (mcv / Math.max(rbc, 0.01)).toFixed(2);
 
   const slider = document.getElementById('slider_mentzer_index');
@@ -356,23 +463,28 @@ function setupDecisionSpaceControls() {
 }
 
 async function loadDecisionSpaceData() {
-  // 1. Try local FastAPI endpoint
-  try {
-    const res = await fetch('/api/decision-space', { signal: AbortSignal.timeout(600) });
-    if (res.ok) {
-      decisionSpaceData = await res.json();
-      renderDecisionSpace();
-      return;
+  const isStaticHost = window.location.protocol === 'file:' || 
+                       window.location.hostname.includes('github.io');
+
+  if (!isStaticHost && apiAvailable !== false) {
+    try {
+      const res = await fetch('/api/decision-space', { signal: AbortSignal.timeout(600) });
+      if (res.ok) {
+        decisionSpaceData = await res.json();
+        renderDecisionSpace();
+        return;
+      }
+    } catch (_) {
+      // API not reachable
     }
-  } catch (_) {
-    // API not reachable (e.g. GitHub Pages static mode)
   }
 
-  // 2. Client-side fallback from pre-compiled model bundle
-  if (window.THALA_MODEL_BUNDLE && window.THALA_MODEL_BUNDLE.cohort) {
+  // Client-side fallback from pre-compiled model bundle
+  const bundle = getModelBundle();
+  if (bundle && bundle.cohort) {
     decisionSpaceData = {
-      btt_points: window.THALA_MODEL_BUNDLE.cohort.btt_points,
-      ida_points: window.THALA_MODEL_BUNDLE.cohort.ida_points
+      btt_points: bundle.cohort.btt_points,
+      ida_points: bundle.cohort.ida_points
     };
     renderDecisionSpace();
   }
@@ -386,20 +498,20 @@ function renderDecisionSpace() {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
 
-  canvas.width = (rect.width || 800) * dpr;
-  canvas.height = 340 * dpr;
-  if (ctx.resetTransform) ctx.resetTransform();
-  else ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.scale(dpr, dpr);
-
-  const W = rect.width || 800;
+  const containerW = canvas.parentElement ? canvas.parentElement.clientWidth : 800;
+  const W = (rect.width && rect.width > 50) ? rect.width : (containerW || 800);
   const H = 340;
+
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
   const padLeft = 60;
   const padRight = 30;
   const padTop = 25;
   const padBottom = 45;
-  const plotW = W - padLeft - padRight;
-  const plotH = H - padTop - padBottom;
+  const plotW = Math.max(100, W - padLeft - padRight);
+  const plotH = Math.max(100, H - padTop - padBottom);
 
   const isLight = document.body.classList.contains('light-theme');
 
@@ -412,9 +524,9 @@ function renderDecisionSpace() {
   const xMax = 105.0; // MCV (fL)
 
   let yMin, yMax, yLabel, currentYVal;
-  const currentMCV = parseFloat(document.getElementById('slider_mcv').value) || 56.8;
-  const currentRBC = parseFloat(document.getElementById('slider_rbc_count').value) || 5.82;
-  const currentRDW = parseFloat(document.getElementById('slider_rdw_cv').value) || 14.1;
+  const currentMCV = getParamVal('mcv');
+  const currentRBC = getParamVal('rbc_count');
+  const currentRDW = getParamVal('rdw_cv');
   const currentMI = (currentMCV / Math.max(currentRBC, 0.01)).toFixed(2);
 
   if (currentProjection === 'MCV_RBC') {
@@ -469,7 +581,7 @@ function renderDecisionSpace() {
   ctx.strokeStyle = isLight ? 'rgba(0, 0, 0, 0.07)' : 'rgba(255, 255, 255, 0.08)';
   ctx.lineWidth = 1;
   ctx.font = '10px JetBrains Mono, monospace';
-  ctx.fillStyle = '#64748b';
+  ctx.fillStyle = isLight ? '#475569' : '#64748b';
 
   // Vertical Grid (MCV)
   for (let m = 50; m <= 100; m += 10) {
@@ -508,8 +620,7 @@ function renderDecisionSpace() {
   if (currentProjection === 'MCV_RBC') {
     ctx.save();
     ctx.strokeStyle = '#f59e0b';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
+    if (ctx.setLineDash) ctx.setLineDash([6, 4]);
 
     ctx.beginPath();
     const mcvStart = Math.max(xMin, yMin * 13.0);
@@ -525,30 +636,48 @@ function renderDecisionSpace() {
   }
 
   // --- 4. COHORT SCATTER POINTS (1,190 HPLC Dataset) ---
-  if (decisionSpaceData) {
+  if (!decisionSpaceData) {
+    const bundle = getModelBundle();
+    if (bundle && bundle.cohort) {
+      decisionSpaceData = {
+        btt_points: bundle.cohort.btt_points,
+        ida_points: bundle.cohort.ida_points
+      };
+    }
+  }
+
+  if (decisionSpaceData && decisionSpaceData.btt_points && decisionSpaceData.ida_points) {
     // A. Beta Thalassemia Trait Points (Red)
-    ctx.fillStyle = '#ef4444';
+    ctx.fillStyle = 'rgba(239, 68, 68, 0.78)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 0.5;
     decisionSpaceData.btt_points.forEach(pt => {
-      const yVal = currentProjection === 'MCV_RBC' ? pt.rbc : pt.rdw;
-      if (pt.mcv >= xMin && pt.mcv <= xMax && yVal >= yMin && yVal <= yMax) {
-        const px = toX(pt.mcv);
+      const mcv = parseFloat(pt.mcv);
+      const yVal = parseFloat(currentProjection === 'MCV_RBC' ? pt.rbc : pt.rdw);
+      if (mcv >= xMin && mcv <= xMax && yVal >= yMin && yVal <= yMax) {
+        const px = toX(mcv);
         const py = toY(yVal);
         ctx.beginPath();
-        ctx.arc(px, py, 3.2, 0, Math.PI * 2);
+        ctx.arc(px, py, 3.4, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
       }
     });
 
     // B. Iron Deficiency Anemia Points (Emerald)
-    ctx.fillStyle = '#10b981';
+    ctx.fillStyle = 'rgba(16, 185, 129, 0.78)';
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 0.5;
     decisionSpaceData.ida_points.forEach(pt => {
-      const yVal = currentProjection === 'MCV_RBC' ? pt.rbc : pt.rdw;
-      if (pt.mcv >= xMin && pt.mcv <= xMax && yVal >= yMin && yVal <= yMax) {
-        const px = toX(pt.mcv);
+      const mcv = parseFloat(pt.mcv);
+      const yVal = parseFloat(currentProjection === 'MCV_RBC' ? pt.rbc : pt.rdw);
+      if (mcv >= xMin && mcv <= xMax && yVal >= yMin && yVal <= yMax) {
+        const px = toX(mcv);
         const py = toY(yVal);
         ctx.beginPath();
-        ctx.arc(px, py, 3.2, 0, Math.PI * 2);
+        ctx.arc(px, py, 3.4, 0, Math.PI * 2);
         ctx.fill();
+        ctx.stroke();
       }
     });
   }
@@ -593,7 +722,7 @@ function renderDecisionSpace() {
   tagX = Math.max(padLeft + 4, Math.min(padLeft + plotW - tagW - 4, tagX));
   const tagY = ptY - 24;
 
-  ctx.fillStyle = 'rgba(10, 16, 30, 0.9)';
+  ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.95)' : 'rgba(10, 16, 30, 0.95)';
   ctx.strokeStyle = '#00e5ff';
   ctx.lineWidth = 1;
   ctx.beginPath();
@@ -602,14 +731,14 @@ function renderDecisionSpace() {
   ctx.fill();
   ctx.stroke();
 
-  ctx.fillStyle = '#00e5ff';
+  ctx.fillStyle = isLight ? '#0891b2' : '#00e5ff';
   ctx.fillText(tagText, tagX + 6, tagY + 13);
   ctx.restore();
 
   // --- 6. UPDATE DECISION META READOUTS ---
   const isThalZone = (currentMCV / Math.max(currentRBC, 0.01)) < 13.0;
   if (elements.patientCoordReadout) {
-    elements.patientCoordReadout.textContent = `MCV: ${currentMCV.toFixed(1)} fL | RBC: ${currentRBC.toFixed(2)} × 10¹²/L`;
+    elements.patientCoordReadout.textContent = `MCV: ${currentMCV.toFixed(1)} fL | ${currentProjection === 'MCV_RBC' ? 'RBC: ' + currentRBC.toFixed(2) + ' × 10¹²/L' : 'RDW: ' + currentRDW.toFixed(1) + '%'}`;
   }
   if (elements.patientZoneReadout) {
     if (isThalZone) {
@@ -627,21 +756,26 @@ function renderDecisionSpace() {
 
 // --- PRESET MANAGEMENT ---
 async function loadPresets() {
-  // 1. Try API first
-  try {
-    const res = await fetch('/api/presets', { signal: AbortSignal.timeout(600) });
-    if (res.ok) {
-      presetsList = await res.json();
-      bindPresetChips();
-      return;
+  const isStaticHost = window.location.protocol === 'file:' || 
+                       window.location.hostname.includes('github.io');
+
+  if (!isStaticHost && apiAvailable !== false) {
+    try {
+      const res = await fetch('/api/presets', { signal: AbortSignal.timeout(600) });
+      if (res.ok) {
+        presetsList = await res.json();
+        bindPresetChips();
+        return;
+      }
+    } catch (_) {
+      // API not reachable
     }
-  } catch (_) {
-    // API not reachable
   }
 
-  // 2. Client-side fallback from bundle
-  if (window.THALA_MODEL_BUNDLE && window.THALA_MODEL_BUNDLE.presets) {
-    presetsList = window.THALA_MODEL_BUNDLE.presets;
+  // Client-side fallback from bundle
+  const bundle = getModelBundle();
+  if (bundle && bundle.presets) {
+    presetsList = bundle.presets;
     bindPresetChips();
   }
 }
@@ -686,21 +820,28 @@ function applyPreset(presetId) {
 }
 
 async function loadRandomCohortPatient() {
-  // 1. Try API
-  try {
-    const res = await fetch('/api/random-patient', { signal: AbortSignal.timeout(600) });
-    if (res.ok) {
-      const p = await res.json();
-      applyPatientObject(p);
-      return;
-    }
-  } catch (_) {}
+  const isStaticHost = window.location.protocol === 'file:' || 
+                       window.location.hostname.includes('github.io');
 
-  // 2. Client-side pool
-  if (window.THALA_MODEL_BUNDLE && window.THALA_MODEL_BUNDLE.random_pool) {
-    const pool = window.THALA_MODEL_BUNDLE.random_pool;
-    const p = pool[Math.floor(Math.random() * pool.length)];
-    applyPatientObject(p);
+  if (!isStaticHost && apiAvailable !== false) {
+    try {
+      const res = await fetch('/api/random-patient', { signal: AbortSignal.timeout(600) });
+      if (res.ok) {
+        const p = await res.json();
+        applyPatientObject(p);
+        return;
+      }
+    } catch (_) {}
+  }
+
+  // Client-side pool from bundle
+  const bundle = getModelBundle();
+  if (bundle && bundle.random_pool) {
+    const pool = bundle.random_pool;
+    if (pool.length > 0) {
+      const p = pool[Math.floor(Math.random() * pool.length)];
+      applyPatientObject(p);
+    }
   }
 }
 
@@ -724,7 +865,9 @@ function applyPatientObject(p) {
   });
 
   document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
-  elements.btnRandomCohort.classList.add('active');
+  if (elements.btnRandomCohort) {
+    elements.btnRandomCohort.classList.add('active');
+  }
 
   renderDecisionSpace();
   triggerInference();
@@ -744,7 +887,12 @@ function setFormValues(vals) {
 }
 
 function getFormValues() {
-  const ageVal = elements.sliderAge ? parseFloat(elements.sliderAge.value) : 28.0;
+  let ageVal = 28.0;
+  if (elements.numAge && elements.numAge.value !== '' && !isNaN(parseFloat(elements.numAge.value))) {
+    ageVal = parseFloat(elements.numAge.value);
+  } else if (elements.sliderAge && elements.sliderAge.value !== '' && !isNaN(parseFloat(elements.sliderAge.value))) {
+    ageVal = parseFloat(elements.sliderAge.value);
+  }
 
   return {
     age: ageVal,
@@ -754,14 +902,14 @@ function getFormValues() {
     referring_physician: 'Dr. Hematology Clinic',
     clinical_notes: '',
 
-    rbc_count: parseFloat(document.getElementById('slider_rbc_count').value),
-    hemoglobin: parseFloat(document.getElementById('slider_hemoglobin').value),
-    hct: parseFloat(document.getElementById('slider_hct').value),
-    mcv: parseFloat(document.getElementById('slider_mcv').value),
-    mch: parseFloat(document.getElementById('slider_mch').value),
-    mchc: parseFloat(document.getElementById('slider_mchc').value),
-    rdw_cv: parseFloat(document.getElementById('slider_rdw_cv').value),
-    mentzer_index: parseFloat(document.getElementById('slider_mentzer_index').value)
+    rbc_count: getParamVal('rbc_count'),
+    hemoglobin: getParamVal('hemoglobin'),
+    hct: getParamVal('hct'),
+    mcv: getParamVal('mcv'),
+    mch: getParamVal('mch'),
+    mchc: getParamVal('mchc'),
+    rdw_cv: getParamVal('rdw_cv'),
+    mentzer_index: getParamVal('mentzer_index')
   };
 }
 
@@ -770,12 +918,12 @@ function debouncedInference() {
   if (debounceTimer) clearTimeout(debounceTimer);
   debounceTimer = setTimeout(() => {
     triggerInference();
-  }, 120);
+  }, 80);
 }
 
 // --- PURE IN-BROWSER CLIENT-SIDE RANDOM FOREST & SHAP INFERENCE ENGINE ---
 function runClientSideInference(patientData) {
-  const bundle = window.THALA_MODEL_BUNDLE;
+  const bundle = getModelBundle();
   if (!bundle) throw new Error("Model bundle not loaded");
 
   const featOrder = bundle.features;
@@ -1044,33 +1192,50 @@ function round(val, dec) {
 async function triggerInference() {
   const payload = getFormValues();
   const startTime = performance.now();
-
   let data = null;
 
-  // 1. Attempt API call (FastAPI backend when running locally)
-  try {
-    const res = await fetch('/api/predict', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-      signal: AbortSignal.timeout(600)
-    });
-    if (res.ok) {
-      data = await res.json();
+  const isStaticHost = window.location.protocol === 'file:' || 
+                       window.location.hostname.includes('github.io') ||
+                       window.location.hostname.includes('pages.dev') ||
+                       window.location.hostname.includes('netlify.app') ||
+                       window.location.hostname.includes('vercel.app');
+
+  // 1. Attempt API call (only if not on static host and API not known unavailable)
+  if (!isStaticHost && apiAvailable !== false) {
+    try {
+      const res = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(600)
+      });
+      if (res.ok) {
+        data = await res.json();
+        apiAvailable = true;
+      } else {
+        apiAvailable = false;
+      }
+    } catch (_) {
+      apiAvailable = false;
     }
-  } catch (_) {
-    // API unreachable (e.g. GitHub Pages static hosting or file://)
   }
 
   // 2. Client-side fallback: 100% in-browser Random Forest & Tree Attribution engine
-  if (!data && window.THALA_MODEL_BUNDLE) {
-    data = runClientSideInference(payload);
+  const bundle = getModelBundle();
+  if (!data && bundle) {
+    try {
+      data = runClientSideInference(payload);
+    } catch (err) {
+      console.error("Client inference error:", err);
+    }
   }
 
   if (data) {
     currentAnalysis = data;
     const elapsed = Math.round(performance.now() - startTime);
-    elements.lastInferenceTime.textContent = `Live Inference: ${elapsed} ms`;
+    if (elements.lastInferenceTime) {
+      elements.lastInferenceTime.textContent = `Live Inference: ${elapsed} ms`;
+    }
     renderDiagnosticResults(data);
     renderDecisionSpace();
   }
@@ -1119,17 +1284,25 @@ function renderVerdictHero(pred) {
 
 // 2. SHAP Waterfall & Force Attribution Bars
 function renderShapAttributions(shap) {
-  elements.shapBaseVal.textContent = `${(shap.base_value * 100).toFixed(1)}%`;
-  elements.shapTopFeature.textContent = shap.top_driver || 'MCV';
+  if (!shap) return;
+  if (elements.shapBaseVal) {
+    elements.shapBaseVal.textContent = `${(shap.base_value * 100).toFixed(1)}%`;
+  }
+  if (elements.shapTopFeature) {
+    elements.shapTopFeature.textContent = shap.top_driver || 'MCV';
+  }
 
   const container = elements.shapBarsContainer;
+  if (!container) return;
   container.innerHTML = '';
+
+  if (!shap.features || shap.features.length === 0) return;
 
   const maxAbs = Math.max(...shap.features.map(f => f.abs_shap), 0.15);
 
   shap.features.forEach(feat => {
     const isPos = feat.shap_value > 0;
-    const barWidthPct = (feat.abs_shap / maxAbs) * 45;
+    const barWidthPct = Math.min(48, Math.max(2, (feat.abs_shap / maxAbs) * 45));
 
     const row = document.createElement('div');
     row.className = 'shap-bar-row';
@@ -1139,10 +1312,10 @@ function renderShapAttributions(shap) {
         <span>${feat.name}</span>
         <span class="shap-feat-val">${feat.actual_value}</span>
       </div>
-      <div class="shap-bar-canvas" title="${feat.explanation}">
+      <div class="shap-bar-canvas" title="${feat.explanation || ''}">
         <div class="shap-center-axis"></div>
         <div class="shap-bar-fill ${isPos ? 'positive' : 'negative'}"
-             style="width: ${barWidthPct}%;"></div>
+             style="width: ${barWidthPct.toFixed(1)}%;"></div>
       </div>
       <div class="shap-val-text ${isPos ? 'pos' : 'neg'}">
         ${isPos ? '+' : ''}${feat.shap_value.toFixed(4)}

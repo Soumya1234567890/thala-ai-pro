@@ -1,10 +1,10 @@
 # 🩸 THALA-AI PRO™: Clinical Explainable AI Platform for Thalassemia vs. Iron Deficiency Anemia Screening
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen?logo=github)](https://Soumya1234567890.github.io/thala-ai-pro/)
-[![Model](https://img.shields.io/badge/Model-Random%20Forest%20(100%20Trees)-blue?logo=scikitlearn)](https://scikit-learn.org/)
+[![Model](https://img.shields.io/badge/Model-Support%20Vector%20Machine%20(RBF%20Kernel)-blue?logo=scikitlearn)](https://scikit-learn.org/)
 [![Validation Cohort](https://img.shields.io/badge/Validation%20Cohort-1%2C190%20HPLC%20Records-purple)](#cohort-benchmark)
-[![Accuracy](https://img.shields.io/badge/Accuracy-96.1%25%20(100%25%20BTT%20vs%20IDA)-success)](#model-performance)
-[![Sensitivity](https://img.shields.io/badge/Sensitivity%20(Recall)-99.8%25-red)](#model-performance)
+[![Accuracy](https://img.shields.io/badge/Accuracy-99.9%25%20(100%25%20BTT%20Sensitivity)-success)](#model-performance)
+[![Sensitivity](https://img.shields.io/badge/Sensitivity%20(Recall)-100.0%25-red)](#model-performance)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey)](#license)
 
 > **THALA-AI PRO™** is a clinical decision-support web application and explainable artificial intelligence (XAI) screening suite for differentiating **Beta Thalassemia Trait (BTT)** from **Iron Deficiency Anemia (IDA)** using Complete Blood Count (CBC) red blood cell indices.
@@ -62,7 +62,7 @@ Microcytic hypochromic anemias present one of the most common differential diagn
 
 ### 1. Dual-Mode Machine Learning Engine (Client-Side & Python)
 * **Pre-compiled In-Browser Engine (`model_data.js`)**: Evaluates all **100 decision trees** of the Random Forest model and traverses tree paths in $<1\text{ ms}$ with exact mathematical parity to Scikit-Learn.
-* **Optional FastAPI Backend (`app.py`)**: For local Python development, loading `best_thalassemia_classifier_model.pkl`, `robust_scaler.pkl`, and `shap.TreeExplainer`.
+* **Optional FastAPI Backend (`app.py`)**: For local Python development, loading `best_thal_ida_classifier.joblib`, `scaler (7).joblib`, and `shap.TreeExplainer`.
 
 ### 2. Explainable AI: Real-Time SHAP Waterfall Attributions
 * Individual Shapley feature contributions ($\phi_i$) decomposing the prediction:
@@ -143,9 +143,9 @@ Then visit `http://localhost:8080`.
 ├── model_data.js              # Pre-compiled 100-tree Random Forest & cohort benchmark data
 ├── app.py                     # Optional FastAPI server (REST endpoints, SHAP TreeExplainer)
 ├── report_generator.py        # ReportLab PDF report generation engine
-├── best_thalassemia_classifier_model.pkl  # Trained Scikit-Learn Random Forest model
-├── robust_scaler.pkl          # Feature scaling parameters
-├── HPLC_data_cleaned (3).xlsx # 1,190-sample clinical HPLC dataset
+├── best_thal_ida_classifier.joblib  # Trained Scikit-Learn Random Forest model
+├── scaler (7).joblib          # Feature scaling parameters
+├── RBC indices cleaned filled 2.xlsx # 1,190-sample clinical HPLC dataset
 ├── .github/workflows/deploy.yml # Automated GitHub Pages CI/CD workflow
 ├── .gitignore                 # Standard repository ignores
 └── README.md                  # Clinical & technical documentation

@@ -102,7 +102,8 @@ Displays consensus agreement percentage and warns of single-cutoff index diverge
 * 🧪 **Case 2: Severe Iron Deficiency Anemia (IDA)**
 * 🧬 **Case 3: Combined IDA + Thal Trait (Dual Profile)**: Demonstrates the dual presentation (erythrocytosis with severe anisocytosis) and triggers the dedicated Clinical Risk Advisory.
 * ⚠️ **Case 4: Equivocal Borderline (Mentzer ~13)**
-* 🎲 **Random Cohort Record (1,190 Dataset)**: Samples a record from the 1,190 dataset together with its ground-truth label! (Implement Combined IDA & Beta Thalassemia Trait detection, alert banner, and preset profile)
+* 🧬 **Random Combined IDA + Thal (100 Cases)**: Samples directly from the 100-case combined cohort!
+* 🎲 **Random Cohort Record (1,190 Dataset)**: Samples a record from the 1,190 dataset together with its ground-truth label!
 
 ---
 

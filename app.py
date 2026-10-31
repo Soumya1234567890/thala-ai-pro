@@ -682,6 +682,31 @@ def get_random_patient_from_cohort():
         'clinical_notes': f"Synthetic record (generated with Google Gemini) from the 1,190-record dataset; not a real patient. Dataset label: {row['HPLC Diagnosis']}."
     }
 
+@app.get("/api/random-combined")
+def get_random_combined_patient():
+    comb_df = cohort_df[cohort_df['HPLC Diagnosis'] == 'Combined IDA and Beta Thalassemia Trait']
+    if len(comb_df) == 0:
+        comb_df = cohort_df
+    row = comb_df.sample(1).iloc[0]
+    return {
+        'patient_id': f"COMB-{random.randint(100, 999)}",
+        'patient_name': f"Combined Cohort Case #{row.name + 1}",
+        'age': str(row.get('Age', '32_yrs')),
+        'gender': random.choice(['Female', 'Male']),
+        'referring_physician': 'Study Cohort Registry',
+        'rbc_count': round(float(row['RBC Count']), 2),
+        'hct': round(float(row['HCT']), 1) if pd.notna(row['HCT']) else 29.6,
+        'hemoglobin': round(float(row['Hemoglobin']), 1),
+        'mcv': round(float(row['MCV']), 1),
+        'mch': round(float(row['MCH']), 1),
+        'mchc': round(float(row['MCHC']), 1),
+        'rdw_cv': round(float(row['RDW-CV']), 1) if pd.notna(row['RDW-CV']) else 19.9,
+        'mentzer_index': round(float(row['Mentzer Index']), 2),
+        'ground_truth_diagnosis': str(row['HPLC Diagnosis']),
+        'category': 'COMBINED',
+        'clinical_notes': f"Record from the 100-case Combined IDA & BTT cohort; Ground-truth label: {row['HPLC Diagnosis']}."
+    }
+
 @app.get("/api/cohort-stats")
 def get_cohort_stats():
     total_count = len(cohort_df)

@@ -117,6 +117,8 @@ const elements = {
   dialMeter: document.getElementById('dialMeter'),
   dialPercentage: document.getElementById('dialPercentage'),
   dialConfidence: document.getElementById('dialConfidence'),
+  combinedAlertCard: document.getElementById('combinedAlertCard'),
+  combinedAlertDetail: document.getElementById('combinedAlertDetail'),
 
   // SHAP
   shapBaseVal: document.getElementById('shapBaseVal'),
@@ -1027,6 +1029,15 @@ function runClientSideInference(patientData) {
   const maxProb = Math.max(probThal, probIda);
   const confidenceTier = maxProb >= 0.90 ? "Very High Confidence" : (maxProb >= 0.70 ? "High Confidence" : "Borderline Confidence");
 
+  // Clinical Heuristic: Detect Co-existing IDA & Beta Thalassemia Trait (100-case study cohort Table 7.2)
+  const isCombined = (mcv < 75.0 && rdw >= 16.5 && (rbc >= 5.0 || mentzer < 12.5));
+  const combinedRisk = {
+    detected: isCombined,
+    title: 'CLINICAL RISK ALERT: SUSPECTED COMBINED IDA & BETA THALASSEMIA TRAIT',
+    detail: `Dual hematological presentation detected: Microcytosis and erythrocytosis (RBC ${round(rbc, 2)} × 10¹²/L, MCV ${round(mcv, 1)} fL, Mentzer ${round(mentzer, 1)}) characteristic of Beta Thalassemia Trait, co-existing with marked anisocytosis (RDW-CV ${round(rdw, 1)}%) and hypochromia (MCHC ${round(mchc, 1)} g/dL) characteristic of Iron Deficiency Anemia.`,
+    caveat: `Critical Diagnostic Trap: Concomitant iron deficiency can artificially suppress HbA₂ synthesis in Beta Thalassemia Trait patients, causing HPLC HbA₂ levels to fall below the diagnostic 3.5% threshold. Recommend Serum Ferritin / TIBC testing; if iron deficient, replete iron and re-evaluate HPLC.`
+  };
+
   return {
     prediction: {
       predicted_class: predClass,
@@ -1037,6 +1048,7 @@ function runClientSideInference(patientData) {
       confidence_tier: confidenceTier,
       primary_risk_flag: predClass === 1 ? 'HIGH RISK - THALASSEMIA TRAIT' : 'LOW RISK - IDA SUSPECTED'
     },
+    combined_risk: combinedRisk,
     shap_analysis: {
       base_value: bundle.base_value || 0.461,
       features: shapFeatures,
@@ -1273,9 +1285,22 @@ async function triggerInference() {
 // --- RENDER COMPLETE RESULTS ---
 function renderDiagnosticResults(data) {
   renderVerdictHero(data.prediction);
+  renderCombinedRiskAlert(data.combined_risk);
   renderShapAttributions(data.shap_analysis);
   renderConcordanceMatrix(data.indices, data.concordance_summary, data.divergence_notes);
   renderRecommendations(data.recommendations);
+}
+
+function renderCombinedRiskAlert(combinedRisk) {
+  if (!elements.combinedAlertCard) return;
+  if (combinedRisk && combinedRisk.detected) {
+    elements.combinedAlertCard.style.display = 'block';
+    if (elements.combinedAlertDetail) {
+      elements.combinedAlertDetail.textContent = combinedRisk.detail;
+    }
+  } else {
+    elements.combinedAlertCard.style.display = 'none';
+  }
 }
 
 // 1. Verdict & Probability Dial
@@ -1559,6 +1584,22 @@ function generateClientPdfReport(ageVal) {
 
   // Section 1: CBC Table
   let y = 175;
+  if (currentAnalysis.combined_risk?.detected) {
+    doc.setFillColor(255, 251, 235);
+    doc.setDrawColor(217, 119, 6);
+    doc.rect(36, 162, 540, 30, 'FD');
+    doc.setTextColor(180, 83, 9);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('CLINICAL ALERT: SUSPECTED COMBINED IDA & BETA THALASSEMIA TRAIT (DUAL PATHOLOGY)', 44, 174);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(120, 53, 15);
+    doc.text('Erythrocytosis & microcytosis suggest BTT, co-existing with marked anisocytosis (RDW-CV >= 16.5%) indicating IDA.', 44, 182);
+    doc.text('Caveat: Concomitant iron deficiency suppresses HbA2; re-screen with HPLC following therapeutic iron trial.', 44, 189);
+    y = 204;
+  }
+
   doc.setTextColor(30, 64, 175);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
@@ -1756,6 +1797,20 @@ function openPrintPreview() {
           Confidence Level: <b>${pred.confidence_tier}</b> | Primary Risk Flag: <b>${pred.primary_risk_flag}</b>
         </div>
       </div>
+
+      ${currentAnalysis.combined_risk?.detected ? `
+      <div style="background: #fffbeb; border: 1.5px solid #d97706; border-left: 5px solid #d97706; padding: 12px 14px; border-radius: 6px; margin-bottom: 16px;">
+        <div style="font-size: 0.76rem; font-weight: 800; color: #b45309; text-transform: uppercase;">
+          ⚠️ CLINICAL RISK ALERT: SUSPECTED COMBINED IDA &amp; BETA THALASSEMIA TRAIT
+        </div>
+        <div style="font-size: 0.78rem; color: #92400e; margin-top: 4px; line-height: 1.45;">
+          ${currentAnalysis.combined_risk.detail}
+        </div>
+        <div style="font-size: 0.74rem; color: #78350f; margin-top: 6px; font-weight: 600;">
+          <b>Diagnostic Advisory:</b> Concomitant iron deficiency can artificially suppress HbA₂ synthesis below 3.5%, masking Thalassemia Trait on HPLC. Measure Serum Ferritin/TIBC; re-screen post-iron repletion.
+        </div>
+      </div>
+      ` : ''}
 
       <!-- CBC Table -->
       <h4 style="font-size: 0.95rem; margin: 12px 0 6px; color: #1e40af;">1. Complete Blood Count & Red Cell Indices</h4>

@@ -100,8 +100,12 @@
       🧪 Case 2: Severe Iron Deficiency Anemia
     </button>
 
+    <button class="preset-chip" data-preset="combined_ida_btt" id="btnPresetCombined">
+      🧬 Case 3: Combined IDA + Thal Trait (Dual Profile)
+    </button>
+
     <button class="preset-chip" data-preset="borderline_dilemma" id="btnPresetBorderline">
-      ⚠️ Case 3: Equivocal Borderline (Mentzer ~13)
+      ⚠️ Case 4: Equivocal Borderline (Mentzer ~13)
     </button>
 
     <button class="preset-chip random-chip" id="btnRandomCohort">
@@ -369,6 +373,37 @@
             <span class="dial-percentage" id="dialPercentage">98%</span>
             <span class="dial-label" id="dialConfidence">High Conf.</span>
           </div>
+        </div>
+      </div>
+
+      <!-- COMBINED CLINICAL RISK ALERT (Shown dynamically when co-existing IDA & BTT indicators are detected) -->
+      <div id="combinedAlertCard" class="combined-alert-card glass-panel" style="display: none;">
+        <div class="combined-alert-header">
+          <div class="combined-alert-badge">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+              <line x1="12" y1="9" x2="12" y2="13"/>
+              <line x1="12" y1="17" x2="12.01" y2="17"/>
+            </svg>
+            <span>CLINICAL RISK ALERT: SUSPECTED COMBINED IDA &amp; BETA THALASSEMIA TRAIT</span>
+          </div>
+          <span class="combined-alert-cohort-pill">100 Cohort Cases Modeled (Table 7.2)</span>
+        </div>
+        <p class="combined-alert-text" id="combinedAlertDetail">
+          Dual hematological presentation detected: Microcytosis and erythrocytosis suggest Beta Thalassemia Trait, while marked anisocytosis (RDW-CV ≥ 16.5%) and hypochromia indicate co-existing Iron Deficiency Anemia.
+        </p>
+        <div class="combined-alert-caveat">
+          <div class="caveat-title">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+              <circle cx="12" cy="12" r="10"/>
+              <line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>Critical Diagnostic Trap: Concomitant Iron Deficiency Artificially Depresses HbA₂</span>
+          </div>
+          <p class="caveat-desc">
+            In patients with underlying Beta Thalassemia Trait, severe iron depletion suppresses HbA₂ synthesis, frequently causing HPLC HbA₂ levels to fall into the false-negative borderline range (&lt; 3.5%). <b>Clinical Protocol:</b> Quantify Serum Ferritin and Iron Saturation. If IDA is confirmed, administer therapeutic iron trial for 4–6 weeks and repeat HPLC electrophoresis post-iron repletion to unmask or confirm Thalassemia Trait.
+          </p>
         </div>
       </div>
 

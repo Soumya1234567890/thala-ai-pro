@@ -174,7 +174,30 @@ def generate_clinical_report_pdf(patient_data: dict, analysis_result: dict) -> b
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
     ]))
     story.append(s_table)
-    story.append(Spacer(1, 8))
+    story.append(Spacer(1, 6))
+
+    # Optional: Combined IDA & Beta Thalassemia Trait Alert Box
+    comb_risk = analysis_result.get('combined_risk', {})
+    if comb_risk.get('detected', False):
+        comb_box_data = [
+            [
+                Paragraph("<b><font color='#b45309'>⚠️ CLINICAL RISK ALERT: SUSPECTED COMBINED IDA & BETA THALASSEMIA TRAIT (DUAL PATHOLOGY)</font></b><br/>"
+                          f"<font size='7.5' color='#78350f'>{comb_risk.get('detail', '')}<br/>"
+                          "<b>Diagnostic Pitfall:</b> Co-existing iron deficiency suppresses HbA₂ synthesis, potentially masking Beta Thalassemia Trait on HPLC (giving false normal HbA₂ &lt; 3.5%). Measure Serum Ferritin; re-evaluate HPLC after therapeutic iron repletion.</font>",
+                          body_style)
+            ]
+        ]
+        c_table = Table(comb_box_data, colWidths=[540])
+        c_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, -1), colors.HexColor('#fffbeb')),
+            ('BOX', (0, 0), (-1, -1), 1.2, colors.HexColor('#d97706')),
+            ('TOPPADDING', (0, 0), (-1, -1), 5),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 5),
+            ('LEFTPADDING', (0, 0), (-1, -1), 8),
+            ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+        ]))
+        story.append(c_table)
+        story.append(Spacer(1, 6))
 
     # --- COMPLETE BLOOD COUNT (CBC) & RBC INDICES ---
     story.append(Paragraph("1. AUTOMATED HEMATOLOGY PARAMETERS (COMPLETE BLOOD COUNT)", section_heading))

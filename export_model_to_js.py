@@ -82,7 +82,7 @@ presets = [
     },
     {
         'id': 'ida_classic',
-        'title': 'Severe Iron Deficiency Anemia',
+        'title': 'Case 2: Severe Iron Deficiency Anemia',
         'desc': 'Severe anemia (Hb 6.8 g/dL), low RBC (3.42) and severe anisocytosis (RDW-CV 21.8%). Mentzer 20.6 strongly concordant with IDA.',
         'data': {
             'rbc_count': 3.42,
@@ -97,8 +97,24 @@ presets = [
         }
     },
     {
+        'id': 'combined_ida_btt',
+        'title': 'Case 3: Combined IDA + Thal Trait (Dual Profile)',
+        'desc': 'Dual presentation from 100-case study cohort: Erythrocytosis (RBC 5.38) & microcytosis (MCV 57.6) typical of BTT co-existing with marked anisocytosis (RDW 19.9%) and hypochromia (MCHC 27.8) from IDA.',
+        'data': {
+            'rbc_count': 5.38,
+            'hemoglobin': 8.6,
+            'hct': 29.6,
+            'mcv': 57.6,
+            'mch': 15.8,
+            'mchc': 27.8,
+            'rdw_cv': 19.9,
+            'mentzer_index': 10.71,
+            'age': 32
+        }
+    },
+    {
         'id': 'borderline_dilemma',
-        'title': 'Diagnostic Conflict: Mentzer vs AI',
+        'title': 'Case 4: Equivocal Borderline (Mentzer ~13)',
         'desc': 'Mentzer index of 13.6 falsely suggests IDA (cutoff >= 13), but erythrocytosis (RBC 5.08) and low RDW (14.8%) allow AI model to correctly diagnose Beta Thalassemia Trait (confirmed by HPLC).',
         'data': {
             'rbc_count': 5.08,

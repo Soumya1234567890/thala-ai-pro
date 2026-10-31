@@ -15,7 +15,9 @@ from report_generator import generate_clinical_report_pdf
 
 # --- PATHS ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "best_thal_ida_classifier.joblib")
+MODEL_PATH = os.path.join(BASE_DIR, "best_thal_ida_classifier (1).joblib")
+if not os.path.exists(MODEL_PATH):
+    MODEL_PATH = os.path.join(BASE_DIR, "best_thal_ida_classifier.joblib")
 SCALER_PATH = os.path.join(BASE_DIR, "scaler (7).joblib")
 DATASET_PATH = os.path.join(BASE_DIR, "RBC indices cleaned filled 2.xlsx")
 

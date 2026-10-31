@@ -61,8 +61,8 @@ Microcytic hypochromic anemias present one of the most common differential diagn
 ## ✨ Features & Architecture
 
 ### 1. Dual-Mode Machine Learning Engine (Client-Side & Python)
-* **Pre-compiled In-Browser Engine (`model_data.js`)**: Evaluates all **100 decision trees** of the Random Forest model and traverses tree paths in $<1\text{ ms}$ with exact mathematical parity to Scikit-Learn.
-* **Optional FastAPI Backend (`app.py`)**: For local Python development, loading `best_thal_ida_classifier.joblib`, `scaler (7).joblib`, and `shap.TreeExplainer`.
+* **Pre-compiled In-Browser Engine (`model_data.js`)**: Evaluates the Support Vector Machine (RBF Kernel) decision function and Kernel SHAP attributions in $<1\text{ ms}$ with exact mathematical parity to Scikit-Learn.
+* **Optional FastAPI Backend (`app.py`)**: For local Python development, loading `best_thal_ida_classifier (1).joblib`, `scaler (7).joblib`, and Kernel Explainer.
 
 ### 2. Explainable AI: Real-Time SHAP Waterfall Attributions
 * Individual Shapley feature contributions ($\phi_i$) decomposing the prediction:
@@ -143,7 +143,7 @@ Then visit `http://localhost:8080`.
 ├── model_data.js              # Pre-compiled Support Vector Machine (RBF) & cohort benchmark data
 ├── app.py                     # Optional FastAPI server (REST endpoints, SHAP Kernel Attribution)
 ├── report_generator.py        # ReportLab PDF report generation engine
-├── best_thal_ida_classifier.joblib  # Trained Scikit-Learn Support Vector Machine (SVM) model
+├── best_thal_ida_classifier (1).joblib  # Trained Scikit-Learn Support Vector Machine (SVM) model
 ├── scaler (7).joblib          # Feature scaling parameters
 ├── RBC indices cleaned filled 2.xlsx # 1,190-sample clinical HPLC dataset
 ├── .github/workflows/deploy.yml # Automated GitHub Pages CI/CD workflow

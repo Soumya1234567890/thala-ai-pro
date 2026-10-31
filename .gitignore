@@ -14,17 +14,12 @@ env/
 *.swp
 *.swo
 
-# Binary model & data files (model already embedded in model_data.js)
+# Binary model & data files
 *.pkl
-*.joblib
 *.xlsx
-
-# Python server files (not needed for GitHub Pages)
-app.py
-report_generator.py
-export_model_to_js.py
 
 # OS files
 .DS_Store
 Thumbs.db
 desktop.ini
+.vercel

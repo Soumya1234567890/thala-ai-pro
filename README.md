@@ -1,13 +1,17 @@
-# 🩸 THALA-AI PRO™: Clinical Explainable AI Platform for Thalassemia vs. Iron Deficiency Anemia Screening
+# 🩸 THALA-AI PRO™: Educational Explainable AI Prototype for Thalassemia Trait vs. Iron Deficiency Anemia
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen?logo=github)](https://Soumya1234567890.github.io/thala-ai-pro/)
 [![Model](https://img.shields.io/badge/Model-Support%20Vector%20Machine%20(RBF%20Kernel)-blue?logo=scikitlearn)](https://scikit-learn.org/)
-[![Validation Cohort](https://img.shields.io/badge/Validation%20Cohort-1%2C099%20Modelled%20(Table%207.2)-purple)](#cohort-benchmark)
-[![Accuracy](https://img.shields.io/badge/Accuracy-97.73%25-success)](#model-performance)
-[![Sensitivity](https://img.shields.io/badge/Sensitivity%20(Recall)-96.0%25-red)](#model-performance)
+[![Data](https://img.shields.io/badge/Data-Synthetic%20(Google%20Gemini)-orange)](#model-performance)
+[![Test Accuracy](https://img.shields.io/badge/Test%20Accuracy%20(synthetic%2C%20n%3D220)-97.7%25-success)](#model-performance)
+[![Sensitivity](https://img.shields.io/badge/BTT%20Sensitivity%20(synthetic%20test)-96.0%25-red)](#model-performance)
+[![Use](https://img.shields.io/badge/Use-Educational%20only%2C%20not%20for%20clinical%20use-critical)](#model-performance)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey)](#license)
 
-> **THALA-AI PRO™** is a clinical decision-support web application and explainable artificial intelligence (XAI) screening suite for differentiating **Beta Thalassemia Trait (BTT)** from **Iron Deficiency Anemia (IDA)** using Complete Blood Count (CBC) red blood cell indices.
+> [!WARNING]
+> **Educational research prototype trained on synthetic data generated with Google Gemini. Not a medical device; not for clinical use; no laboratory accreditation.**
+
+> **THALA-AI PRO™** is an educational research prototype and explainable artificial intelligence (XAI) demonstration for differentiating **Beta Thalassemia Trait (BTT)** from **Iron Deficiency Anemia (IDA)** using Complete Blood Count (CBC) red blood cell indices. It was trained and tested **only on synthetic records generated with Google Gemini** (no real patient data).
 
 ---
 
@@ -36,7 +40,7 @@ This web application is **100% static and serverless-ready**. It runs the entire
 ```bash
 git init
 git add .
-git commit -m "Initial release of THALA-AI PRO clinical web app"
+git commit -m "Initial release of THALA-AI PRO educational demo"
 git branch -M main
 git remote add origin https://github.com/<your-username>/<your-repo-name>.git
 git push -u origin main
@@ -61,8 +65,8 @@ Microcytic hypochromic anemias present one of the most common differential diagn
 ## ✨ Features & Architecture
 
 ### 1. Dual-Mode Machine Learning Engine (Client-Side & Python)
-* **Pre-compiled In-Browser Engine (`model_data.js`)**: Evaluates the Support Vector Machine (RBF Kernel) decision function and Kernel SHAP attributions in $<1\text{ ms}$ with exact mathematical parity to Scikit-Learn.
-* **Optional FastAPI Backend (`app.py`)**: For local Python development, loading `best_thal_ida_classifier (1).joblib`, `scaler (7).joblib`, and Kernel Explainer.
+* **Pre-compiled In-Browser Engine (`model_data.js`)**: Evaluates the **Support Vector Machine (RBF kernel, 102 support vectors)** on **7 inputs** (RBC, Hb, HCT, MCV, MCH, MCHC, RDW-CV) in $<1\text{ ms}$, using the scikit-learn decision function and Platt-scaled probability $P(\text{BTT}) = 1/(1+e^{\,\text{probA}\cdot f - \text{probB}})$.
+* **Optional FastAPI Backend (`app.py`)**: For local Python development, loading `best_thal_ida_classifier.joblib` and `scaler (7).joblib`; feature attributions use a marginal (one-feature-at-a-time) decomposition of the SVM decision function.
 
 ### 2. Explainable AI: Real-Time SHAP Waterfall Attributions
 * Individual Shapley feature contributions ($\phi_i$) decomposing the prediction:
@@ -86,32 +90,33 @@ Displays consensus agreement percentage and warns of single-cutoff index diverge
 ### 4. 2D Hematological Decision Space & Cohort Canvas
 * Real-time 2D scatter space comparing **MCV vs. RBC Count** and **MCV vs. RDW-CV**.
 * Mentzer discrimination boundary line ($MCV = 13 \times RBC$).
-* Embedded 1,190-sample clinical HPLC cohort benchmark points.
+* Embedded points from the 1,190-record **synthetic** dataset (generated with Google Gemini; not real patients).
 * **Live Patient Locator Beacon (🎯)** with animated radar ripples tracking current inputs.
 
-### 5. Downloadable Official Clinical PDF Report
-* Formatted laboratory report with hospital header, report ID, Complete Blood Count panel with biological reference ranges & flags, AI prediction, SHAP attribution table, Concordance matrix, and clinical follow-up recommendations.
+### 5. Downloadable Educational Demo PDF
+* Printable demo sheet (clearly marked **not a clinical report / not for clinical use**) with the entered CBC values, reference ranges & flags, model prediction, attribution table, concordance matrix, and general confirmatory work-up notes.
 * Generates client-side via **jsPDF** when hosted statically on GitHub Pages, and via Python **ReportLab** when running locally!
 
-### 6. Curated Clinical Presets & Random Cohort Tester
-* 🩸 **Case 1: Confirmed Beta Thal Trait**
+### 6. Example Presets & Random Synthetic-Record Tester
+* 🩸 **Case 1: Typical Beta Thal Trait Pattern**
 * 🧪 **Case 2: Severe Iron Deficiency Anemia (IDA)**
 * ⚠️ **Case 3: Equivocal Borderline (Mentzer ~13)**
-* 🎲 **Random Cohort Record (1,190 Dataset)**: Samples a real patient record with validated HPLC ground-truth diagnosis!
+* 🎲 **Random Synthetic Record (1,190 Dataset)**: Samples a synthetic record (generated with Google Gemini; not a real patient) together with its dataset label.
 
 ---
 
-## 📊 Model Performance on Clinical HPLC Dataset
+## 📊 Model Performance (Synthetic Held-Out Test Set)
 
-Evaluated on $n = 1,190$ confirmed clinical high-performance liquid chromatography (HPLC) records:
+The dataset consists of **1,190 synthetic records generated with Google Gemini** (no real patients). The deployed model was evaluated on a **held-out synthetic test set of 220 records**. These figures describe performance on synthetic data only; they are **not** clinical validation.
 
-| Evaluation Metric | Modelled Cohort ($n = 1,099$, Table 7.2) | Total Cohort ($n = 1,190$) |
-| :--- | :---: | :---: |
-| **Overall Accuracy** | **97.73%** | **96.11%** |
-| **Sensitivity (Recall for BTT)** | **96.0%** | **99.80%** |
-| **Specificity (IDA)** | **99.16%** | **93.31%** |
-| **Architecture** | Support Vector Machine (RBF) | Non-Linear SVC |
-| **Input Features** | 8 Automated RBC Indices | Standard Scaler Normalized |
+| Evaluation Metric | Held-out synthetic test set ($n = 220$) |
+| :--- | :---: |
+| **Overall Accuracy** | **97.7%** (215/220; 95% CI 94.8–99.0) |
+| **Sensitivity (BTT)** | **96.0%** (97/101) |
+| **Specificity (IDA / non-BTT)** | **99.2%** (118/119) |
+| **ROC-AUC** | **0.994** |
+| **Architecture** | Support Vector Machine (RBF kernel, scikit-learn SVC) |
+| **Input Features** | 7: RBC, Hb, HCT, MCV, MCH, MCHC, RDW-CV (StandardScaler-normalised) |
 
 ---
 
@@ -143,15 +148,17 @@ Then visit `http://localhost:8080`.
 ├── model_data.js              # Pre-compiled Support Vector Machine (RBF) & cohort benchmark data
 ├── app.py                     # Optional FastAPI server (REST endpoints, SHAP Kernel Attribution)
 ├── report_generator.py        # ReportLab PDF report generation engine
-├── best_thal_ida_classifier (1).joblib  # Trained Scikit-Learn Support Vector Machine (SVM) model
+├── best_thal_ida_classifier.joblib  # Trained Scikit-Learn Support Vector Machine (SVM) model
 ├── scaler (7).joblib          # Feature scaling parameters
-├── RBC indices cleaned filled 2.xlsx # 1,190-sample clinical HPLC dataset
+├── RBC indices cleaned filled 2.xlsx # 1,190-record synthetic dataset (Google Gemini-generated)
 ├── .github/workflows/deploy.yml # Automated GitHub Pages CI/CD workflow
 ├── .gitignore                 # Standard repository ignores
-└── README.md                  # Clinical & technical documentation
+└── README.md                  # Technical documentation
 ```
 
 ---
 
 ## ⚖️ Disclaimer
-*This application is an artificial intelligence-assisted clinical decision support proof-of-concept intended for research and educational purposes. Definitive diagnosis of hemoglobinopathies requires quantitative High-Performance Liquid Chromatography (HPLC) / Capillary Electrophoresis and molecular genetic testing ($HBB$ sequencing).*
+**Educational research prototype trained on synthetic data generated with Google Gemini. Not a medical device; not for clinical use; no laboratory accreditation.**
+
+*This application is an educational proof-of-concept intended for research and teaching purposes only. It was trained and tested exclusively on synthetic data, has not been clinically validated, and must not be used to diagnose, screen, or manage any patient. Definitive diagnosis of hemoglobinopathies requires quantitative High-Performance Liquid Chromatography (HPLC) / Capillary Electrophoresis and molecular genetic testing ($HBB$ sequencing).*

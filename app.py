@@ -15,15 +15,13 @@ from report_generator import generate_clinical_report_pdf
 
 # --- PATHS ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, "best_thal_ida_classifier (1).joblib")
-if not os.path.exists(MODEL_PATH):
-    MODEL_PATH = os.path.join(BASE_DIR, "best_thal_ida_classifier.joblib")
+MODEL_PATH = os.path.join(BASE_DIR, "best_thal_ida_classifier.joblib")
 SCALER_PATH = os.path.join(BASE_DIR, "scaler (7).joblib")
 DATASET_PATH = os.path.join(BASE_DIR, "RBC indices cleaned filled 2.xlsx")
 
 app = FastAPI(
     title="THALA-AI PRO Diagnostic Engine",
-    description="Advanced Explainable AI Screening Platform for Thalassemia vs. Iron Deficiency Anemia",
+    description="Educational research prototype (Thalassemia trait vs. Iron Deficiency Anemia) trained on synthetic data generated with Google Gemini. Not a medical device; not for clinical use; no laboratory accreditation.",
     version="2.4.0"
 )
 
@@ -44,22 +42,22 @@ probB_val = float(model.probB_[0]) if hasattr(model, 'probB_') else 0.101504
 print(f"SVM Engine initialized with {len(model.support_vectors_)} support vectors, gamma={gamma_val:.4f}")
 
 # Load and prepare cohort dataset
-print("Loading HPLC clinical dataset...")
+print("Loading synthetic dataset (generated with Google Gemini; not real patients)...")
 cohort_df = pd.read_excel(DATASET_PATH)
 btt_labels = [
     'Beta Thalassemia Trait', 'beta_thalassemia_heterozygous',
     'beta_thalassemia_homozygous', 'hb_lepore_trait', 'sickle_cell_heterozygous'
 ]
 cohort_df['is_thal'] = cohort_df['HPLC Diagnosis'].isin(btt_labels).astype(int)
-print(f"Cohort loaded: {len(cohort_df)} clinical records.")
+print(f"Cohort loaded: {len(cohort_df)} synthetic records.")
 
 # --- PYDANTIC SCHEMAS ---
 class PatientInput(BaseModel):
     age: Optional[float] = Field(28.0, ge=1.0, le=100.0, description="Patient Age in Years")
-    patient_id: Optional[str] = "THL-PT-9042"
-    patient_name: Optional[str] = "Patient Sample"
+    patient_id: Optional[str] = "DEMO-INPUT"
+    patient_name: Optional[str] = "Demo input (not a patient)"
     gender: Optional[str] = "Unspecified"
-    referring_physician: Optional[str] = "Dr. Hematology Clinic"
+    referring_physician: Optional[str] = "Not applicable (educational demo)"
     clinical_notes: Optional[str] = ""
 
     rbc_count: float = Field(..., ge=0.5, le=10.0, description="RBC Count (10^12/L)")
@@ -341,7 +339,7 @@ def predict_and_explain(patient: PatientInput):
     mentzer_val = patient.mentzer_index if patient.mentzer_index is not None else calc_mentzer
 
     # Prepare input array matching scaler feature order:
-    # ['RBC Count', 'HCT', 'Hemoglobin', 'MCV', 'MCH', 'MCHC', 'RDW-CV', 'Mentzer Index']
+    # 7 model inputs, in the scaler's feature order: ['RBC', 'Hb', 'Hct', 'MCV', 'MCH', 'MCHC', 'RDW-CV'] (Mentzer Index is NOT a model input)
     col_map = {
         'RBC': patient.rbc_count,
         'Hb': patient.hemoglobin,
@@ -473,7 +471,7 @@ def predict_and_explain(patient: PatientInput):
         divergence_notes.append(
             f"Note: {concordance_summary['total_indices'] - concordance_summary['agreement_count']} of 8 classical indices disagree with the AI. "
             "Classical formulas (like Mentzer or Shine & Lal) use fixed 1D cutoffs and often fail when microcytosis and anisocytosis overlap. "
-            "The AI Random Forest integrates non-linear interactions across all 8 parameters simultaneously."
+            "The SVM (RBF kernel) integrates non-linear interactions across all 7 red cell indices simultaneously (educational demo; not clinically validated)."
         )
 
     return {
@@ -510,14 +508,14 @@ def get_presets():
     return [
         {
             'id': 'btt_classic',
-            'title': 'Case 1: Confirmed Beta Thalassemia Trait',
+            'title': 'Case 1: Typical Beta Thalassemia Trait Pattern (synthetic example)',
             'subtitle': 'Classic microcytic erythrocytosis with normal RDW (Homogeneous microcytes)',
             'data': {
-                'patient_id': 'BTT-2026-441',
-                'patient_name': 'Meera Sen',
+                'patient_id': 'DEMO-BTT-1',
+                'patient_name': 'Synthetic example (not a patient)',
                 'age': '28_yrs',
-                'gender': 'Female',
-                'referring_physician': 'Dr. P. Roy, Hematologist',
+                'gender': 'Unspecified',
+                'referring_physician': 'Not applicable (educational demo)',
                 'rbc_count': 5.82,
                 'hct': 32.5,
                 'hemoglobin': 9.8,
@@ -526,19 +524,19 @@ def get_presets():
                 'mchc': 30.1,
                 'rdw_cv': 14.1,
                 'mentzer_index': 9.76,
-                'clinical_notes': 'Screened prior to planned conception; mild fatigue, no prior transfusions.'
+                'clinical_notes': 'Illustrative synthetic example; not a real patient.'
             }
         },
         {
             'id': 'ida_classic',
-            'title': 'Case 2: Severe Iron Deficiency Anemia (IDA)',
+            'title': 'Case 2: Severe Iron Deficiency Anemia (IDA) (synthetic example)',
             'subtitle': 'Marked microcytic hypochromic anemia with high RDW (Anisocytosis)',
             'data': {
-                'patient_id': 'IDA-2026-108',
-                'patient_name': 'Pooja Sharma',
+                'patient_id': 'DEMO-IDA-1',
+                'patient_name': 'Synthetic example (not a patient)',
                 'age': '34_yrs',
-                'gender': 'Female',
-                'referring_physician': 'Dr. K. Nair, Internal Medicine',
+                'gender': 'Unspecified',
+                'referring_physician': 'Not applicable (educational demo)',
                 'rbc_count': 4.10,
                 'hct': 24.2,
                 'hemoglobin': 7.2,
@@ -547,19 +545,19 @@ def get_presets():
                 'mchc': 29.7,
                 'rdw_cv': 21.8,
                 'mentzer_index': 14.39,
-                'clinical_notes': 'History of heavy menorrhagia; koilonychia and pallor noted.'
+                'clinical_notes': 'Illustrative synthetic example; not a real patient.'
             }
         },
         {
             'id': 'borderline_dilemma',
-            'title': 'Case 3: Equivocal Borderline Microcytosis',
+            'title': 'Case 3: Equivocal Borderline Microcytosis (synthetic example)',
             'subtitle': 'Mentzer Index exactly around 13.0 - Classical indices in conflict',
             'data': {
-                'patient_id': 'EQV-2026-305',
-                'patient_name': 'Vikram Patel',
+                'patient_id': 'DEMO-EQV-1',
+                'patient_name': 'Synthetic example (not a patient)',
                 'age': '22',
-                'gender': 'Male',
-                'referring_physician': 'Dr. A. Gupta, General Practice',
+                'gender': 'Unspecified',
+                'referring_physician': 'Not applicable (educational demo)',
                 'rbc_count': 4.80,
                 'hct': 29.6,
                 'hemoglobin': 9.5,
@@ -568,7 +566,7 @@ def get_presets():
                 'mchc': 32.1,
                 'rdw_cv': 16.0,
                 'mentzer_index': 13.0,
-                'clinical_notes': 'Routine pre-employment medical checkup; asymptomatic microcytosis.'
+                'clinical_notes': 'Illustrative synthetic example; not a real patient.'
             }
         }
     ]
@@ -577,7 +575,7 @@ def get_presets():
 def get_decision_space():
     """
     Returns 2D decision space coordinates for MCV vs RBC Count and MCV vs RDW
-    from the real 1,190 patient clinical HPLC cohort.
+    from the 1,190-record synthetic dataset (generated with Google Gemini; not real patients).
     """
     btt_labels = [
         'Beta Thalassemia Trait', 'beta_thalassemia_heterozygous',
@@ -614,12 +612,16 @@ def get_decision_space():
         },
         'mentzer_threshold': 13.0,
         'model_metadata': {
-            'framework': 'Random Forest Classifier',
-            'n_estimators': 100,
-            'accuracy_overall': 96.11,
-            'accuracy_btt_ida': 100.0,
-            'sensitivity_btt': 99.80,
-            'specificity_ida': 93.31
+            'framework': 'Support Vector Machine (RBF kernel, scikit-learn SVC)',
+            'input_features': ['RBC', 'Hb', 'HCT', 'MCV', 'MCH', 'MCHC', 'RDW-CV'],
+            'training_data': 'Synthetic (generated with Google Gemini); not real patients',
+            'evaluation_set': 'Held-out synthetic test set, n = 220',
+            'accuracy_overall': 97.7,
+            'accuracy_95ci': [94.8, 99.0],
+            'sensitivity_btt': 96.0,
+            'specificity_ida': 99.2,
+            'roc_auc': 0.994,
+            'intended_use': 'Educational research prototype; not a medical device; not for clinical use; no laboratory accreditation'
         }
     }
 
@@ -628,10 +630,10 @@ def get_random_patient_from_cohort():
     row = cohort_df.sample(1).iloc[0]
     return {
         'patient_id': f"COHORT-{random.randint(1000, 9999)}",
-        'patient_name': f"Cohort Subject #{random.randint(100, 1190)}",
+        'patient_name': 'Synthetic record (not a patient)',
         'age': str(row.get('Age', '30_yrs')),
-        'gender': random.choice(['Female', 'Male']),
-        'referring_physician': 'Study Cohort Registry',
+        'gender': 'Unspecified',
+        'referring_physician': 'Not applicable (synthetic record)',
         'rbc_count': round(float(row['RBC Count']), 2),
         'hct': round(float(row['HCT']), 1) if pd.notna(row['HCT']) else 30.0,
         'hemoglobin': round(float(row['Hemoglobin']), 1),
@@ -641,7 +643,7 @@ def get_random_patient_from_cohort():
         'rdw_cv': round(float(row['RDW-CV']), 1) if pd.notna(row['RDW-CV']) else 14.0,
         'mentzer_index': round(float(row['Mentzer Index']), 2),
         'ground_truth_diagnosis': str(row['HPLC Diagnosis']),
-        'clinical_notes': f"Real clinical record from 1,190-sample cohort. Ground truth HPLC result: {row['HPLC Diagnosis']}."
+        'clinical_notes': f"Synthetic record (generated with Google Gemini) from the 1,190-record dataset; not a real patient. Dataset label: {row['HPLC Diagnosis']}."
     }
 
 @app.get("/api/cohort-stats")
@@ -693,7 +695,7 @@ def download_clinical_report(req: ReportDownloadRequest):
         pdf_bytes = generate_clinical_report_pdf(req.patient, req.analysis)
         pid = req.patient.get('patient_id', 'REPORT')
         safe_pid = "".join(c for c in pid if c.isalnum() or c in ('-', '_'))
-        filename = f"Thalassemia_Clinical_Report_{safe_pid}.pdf"
+        filename = f"THALA-AI_Demo_Output_NOT_FOR_CLINICAL_USE_{safe_pid}.pdf"
         
         return StreamingResponse(
             io.BytesIO(pdf_bytes),
@@ -701,7 +703,7 @@ def download_clinical_report(req: ReportDownloadRequest):
             headers={"Content-Disposition": f"attachment; filename={filename}"}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to generate clinical PDF: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to generate demo PDF: {str(e)}")
 
 # Mount static folder
 os.makedirs(os.path.join(BASE_DIR, "static"), exist_ok=True)

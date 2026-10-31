@@ -3,12 +3,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>THALA-AI PRO™ | Explainable AI Hematology Screening & Clinical Decision Support</title>
-  <meta name="description" content="Advanced clinical diagnostic proof-of-concept web application powered by Support Vector Machine (RBF Kernel) and SHAP Kernel Decomposition for discriminating Beta Thalassemia Trait from Iron Deficiency Anemia with Classical Index concordance.">
+  <title>THALA-AI PRO™ | Educational Explainable AI Demo (BTT vs IDA, Synthetic Data)</title>
+  <meta name="description" content="Educational research prototype (not a medical device; not for clinical use) demonstrating a Support Vector Machine (RBF kernel) with SHAP-style attributions for discriminating Beta Thalassemia Trait from Iron Deficiency Anemia, trained on synthetic data generated with Google Gemini.">
   <link rel="stylesheet" href="./style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220%22%20%22100%22%20%22100%22><text y=%22.9em%22 font-size=%2290%22>🩸</text></svg>">
 </head>
 <body>
+
+  <!-- RESEARCH / EDUCATIONAL DISCLAIMER BANNER -->
+  <div class="research-disclaimer" role="note">
+    <b>&#9888; Disclaimer:</b> Educational research prototype trained on synthetic data generated with Google Gemini. Not a medical device; not for clinical use; no laboratory accreditation.
+  </div>
 
   <!-- HEADER -->
   <header class="app-header">
@@ -32,13 +37,13 @@
           <span class="pill-label">Model:</span>
           <span class="pill-value">Support Vector Machine (RBF)</span>
         </div>
-        <div class="metric-pill pill-accuracy" title="Classification Accuracy on Modelled Cohort (Table 7.2)">
+        <div class="metric-pill pill-accuracy" title="Accuracy on held-out synthetic test set: 215/220 (95% CI 94.8-99.0%). Not clinical validation.">
           <span class="pill-dot dot-emerald"></span>
-          <span class="pill-label">Accuracy:</span>
-          <span class="pill-value">97.73%</span>
-          <span class="pill-sub">(96.0% BTT Sensitivity)</span>
+          <span class="pill-label">Test-set accuracy:</span>
+          <span class="pill-value">97.7%</span>
+          <span class="pill-sub">(synthetic, n = 220)</span>
         </div>
-        <div class="metric-pill pill-sensitivity" title="Sensitivity / Recall for Beta Thalassemia Detection">
+        <div class="metric-pill pill-sensitivity" title="BTT sensitivity on held-out synthetic test set: 97/101. IDA specificity 99.2% (118/119); ROC-AUC 0.994.">
           <span class="pill-dot dot-red"></span>
           <span class="pill-label">Sensitivity:</span>
           <span class="pill-value">96.0%</span>
@@ -47,8 +52,8 @@
     </div>
 
     <div class="header-actions">
-      <div class="status-pill" title="Modelled Cohort: 503 Thalassemia vs 596 IDA / Controls (Table 7.2)">
-        <span>Cohort: <b>1,099 Modelled (Table 7.2)</b></span>
+      <div class="status-pill" title="Synthetic records generated with Google Gemini (not real patients). Modelled subset: 503 Thalassemia vs 596 IDA / non-Thal (Table 7.2)">
+        <span>Data: <b>Synthetic (1,099 modelled)</b></span>
       </div>
 
       <button id="themeToggleBtn" class="btn btn-secondary btn-icon-only" title="Toggle Clinical Day / Dark Theme">
@@ -58,7 +63,7 @@
         </svg>
       </button>
 
-      <button id="previewReportBtn" class="btn btn-secondary" title="Preview Printable Clinical Sheet">
+      <button id="previewReportBtn" class="btn btn-secondary" title="Preview printable demo sheet (not a clinical report)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M6 9V2h12v7"/>
           <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
@@ -67,13 +72,13 @@
         <span>Print Preview</span>
       </button>
 
-      <button id="downloadPdfBtn" class="btn btn-primary" title="Generate Official Clinical PDF Report via ReportLab">
+      <button id="downloadPdfBtn" class="btn btn-primary" title="Generate educational demo PDF (not a clinical report)">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
           <polyline points="7 10 12 15 17 10"/>
           <line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
-        <span>Download Clinical PDF</span>
+        <span>Download Demo PDF</span>
       </button>
     </div>
   </header>
@@ -84,11 +89,11 @@
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
         <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
       </svg>
-      Clinical Presets:
+      Example Presets (synthetic):
     </div>
 
     <button class="preset-chip active" data-preset="btt_classic" id="btnPresetBTT">
-      🩸 Case 1: Confirmed Beta Thal Trait
+      🩸 Case 1: Typical Beta Thal Trait Pattern
     </button>
 
     <button class="preset-chip" data-preset="ida_classic" id="btnPresetIDA">
@@ -100,7 +105,7 @@
     </button>
 
     <button class="preset-chip random-chip" id="btnRandomCohort">
-      🎲 Load Random Cohort Record (1,190 Dataset)
+      🎲 Load Random Synthetic Record (1,190 Dataset)
     </button>
   </nav>
 
@@ -430,8 +435,8 @@
         <div class="decision-canvas-container">
           <canvas id="decisionCanvas" width="820" height="340"></canvas>
           <div class="canvas-legend">
-            <div class="c-leg-item"><span class="leg-dot leg-thal"></span> <b>Beta Thal Trait Cohort (HPLC)</b></div>
-            <div class="c-leg-item"><span class="leg-dot leg-ida"></span> <b>IDA Cohort (HPLC)</b></div>
+            <div class="c-leg-item"><span class="leg-dot leg-thal"></span> <b>Beta Thal Trait (synthetic records)</b></div>
+            <div class="c-leg-item"><span class="leg-dot leg-ida"></span> <b>IDA (synthetic records)</b></div>
             <div class="c-leg-item"><span class="leg-line leg-mentzer"></span> <b>Mentzer Cutoff (MI = 13.0)</b></div>
             <div class="c-leg-item"><span class="leg-beacon-icon">🎯</span> <b>Current Patient Locator</b></div>
           </div>
@@ -536,9 +541,9 @@
                 <line x1="2" y1="12" x2="22" y2="12"/>
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
               </svg>
-              1,099 Modelled HPLC Cohort Reference Benchmark (Table 7.2)
+              1,099 Modelled Synthetic Cohort (Table 7.2)
             </h3>
-            <span class="panel-subtitle">Validation against confirmed HPLC ground-truth patient population (Table 7.2)</span>
+            <span class="panel-subtitle">Synthetic records generated with Google Gemini - not real patients. Performance below is from a held-out synthetic test set (n = 220), not clinical validation.</span>
           </div>
         </div>
 
@@ -546,7 +551,7 @@
           <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
             <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Modelled Cohort (Table 7.2)</div>
             <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--cyan-accent);">1,099 Cases</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Of 1,190 Total HPLC Records</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Of 1,190 synthetic records</div>
           </div>
           <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
             <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Thalassemia Cohort</div>
@@ -556,12 +561,12 @@
           <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
             <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">IDA / Non-Thal Cohort</div>
             <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #34d399;">596 Cases</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">496 IDA + 100 Mixed (Table 7.2)</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">496 IDA + 100 combined IDA/BTT, treated as non-BTT by the model (Table 7.2)</div>
           </div>
           <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Validated Performance</div>
-            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #c084fc;">97.73% Accuracy</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">96.0% Sensitivity (SVM)</div>
+            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Synthetic Test-Set Performance (n = 220)</div>
+            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #c084fc;">97.7% Accuracy</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">215/220 (95% CI 94.8-99.0) &middot; BTT sensitivity 96.0% (97/101) &middot; IDA specificity 99.2% (118/119) &middot; ROC-AUC 0.994 (SVM)</div>
           </div>
         </div>
       </div>
@@ -578,7 +583,7 @@
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
           </svg>
-          Clinical Laboratory Report Preview
+          Educational Demo Output Preview (not for clinical use)
         </h3>
         <button id="closeModalBtn" class="btn btn-secondary btn-icon-only">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -589,7 +594,7 @@
       </div>
 
       <div class="modal-body" id="modalPrintArea">
-        <!-- Rendered formatted clinical sheet -->
+        <!-- Rendered educational demo sheet (not a clinical report) -->
       </div>
 
       <div class="modal-footer">
@@ -607,7 +612,7 @@
             <polyline points="7 10 12 15 17 10"/>
             <line x1="12" y1="15" x2="12" y2="3"/>
           </svg>
-          Download PDF (ReportLab)
+          Download Demo PDF
         </button>
       </div>
     </div>

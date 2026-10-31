@@ -10,7 +10,7 @@ from reportlab.lib.units import inch
 
 def generate_clinical_report_pdf(patient_data: dict, analysis_result: dict) -> bytes:
     """
-    Generates an official, publication-grade Clinical Laboratory Diagnostic Report
+    Generates an EDUCATIONAL DEMO PDF (not a clinical report; not for clinical use)
     combining Complete Blood Count (CBC), AI Support Vector Machine (RBF) Classification,
     SHAP Feature Attribution Explainability, and Classical Discrimination Indices Concordance.
     """
@@ -104,12 +104,11 @@ def generate_clinical_report_pdf(patient_data: dict, analysis_result: dict) -> b
     # --- HEADER / CLINICAL LOGO ---
     header_data = [
         [
-            Paragraph("<b>THALA-AI CLINICAL DIAGNOSTIC CENTER</b><br/>"
-                      "<font size='7.5' color='#64748b'>Advanced Hematopathology & Explainable AI Screening Unit<br/>"
-                      "ISO 15189 / CAP Accredited Diagnostic Reference Laboratory</font>", title_style),
-            Paragraph(f"<b>REPORT ID:</b> THL-{patient_data.get('patient_id', '9984')}<br/>"
+            Paragraph("<b>THALA-AI PRO - EDUCATIONAL DEMO OUTPUT</b><br/>"
+                      "<font size='7.5' color='#64748b'>Educational research prototype trained on synthetic data generated with Google Gemini. Not a medical device; not for clinical use; no laboratory accreditation.</font>", title_style),
+            Paragraph(f"<b>DEMO ID:</b> {patient_data.get('patient_id', 'DEMO-INPUT')}<br/>"
                       f"<b>DATE:</b> {datetime.now().strftime('%d-%b-%Y %H:%M')}<br/>"
-                      f"<b>STATUS:</b> <font color='#0284c7'><b>VERIFIED REPORT</b></font>", subtitle_style)
+                      f"<b>STATUS:</b> <font color='#b91c1c'><b>NOT FOR CLINICAL USE</b></font>", subtitle_style)
         ]
     ]
     header_table = Table(header_data, colWidths=[360, 180])
@@ -123,19 +122,19 @@ def generate_clinical_report_pdf(patient_data: dict, analysis_result: dict) -> b
     # --- PATIENT DEMOGRAPHICS ---
     patient_info = [
         [
-            Paragraph("<b>Patient Name:</b>", body_bold),
-            Paragraph(str(patient_data.get('patient_name', 'Anonymous Patient')), body_style),
-            Paragraph("<b>Patient ID:</b>", body_bold),
-            Paragraph(str(patient_data.get('patient_id', 'PT-2026-001')), body_style),
-            Paragraph("<b>Specimen:</b>", body_bold),
-            Paragraph("Whole Blood (K2-EDTA)", body_style),
+            Paragraph("<b>Input Label:</b>", body_bold),
+            Paragraph(str(patient_data.get('patient_name', 'Demo input (not a patient)')), body_style),
+            Paragraph("<b>Demo ID:</b>", body_bold),
+            Paragraph(str(patient_data.get('patient_id', 'DEMO-INPUT')), body_style),
+            Paragraph("<b>Input Source:</b>", body_bold),
+            Paragraph("Values entered manually (demo)", body_style),
         ],
         [
             Paragraph("<b>Age / Gender:</b>", body_bold),
             Paragraph(f"{patient_data.get('age', 'N/A')} / {patient_data.get('gender', 'N/A')}", body_style),
-            Paragraph("<b>Referring MD:</b>", body_bold),
-            Paragraph(str(patient_data.get('referring_physician', 'Dr. Clinical Hematologist')), body_style),
-            Paragraph("<b>Collection Date:</b>", body_bold),
+            Paragraph("<b>Training Data:</b>", body_bold),
+            Paragraph("Synthetic (Google Gemini)", body_style),
+            Paragraph("<b>Generated:</b>", body_bold),
             Paragraph(datetime.now().strftime('%d-%b-%Y'), body_style),
         ]
     ]
@@ -302,7 +301,7 @@ def generate_clinical_report_pdf(patient_data: dict, analysis_result: dict) -> b
         [
             Paragraph(
                 f"<font size='7.5' color='#1e293b'>{rec_texts}</font><br/><br/>"
-                f"<font size='7' color='#64748b'><b>Clinical Caution:</b> This AI decision-support system is an assistive screening tool. Definitive diagnosis of hemoglobinopathies requires quantitative High-Performance Liquid Chromatography (HPLC) / Capillary Electrophoresis and molecular genetic testing.</font>",
+                f"<font size='7' color='#64748b'><b>Disclaimer:</b> Educational research prototype trained on synthetic data generated with Google Gemini. Not a medical device; not for clinical use; no laboratory accreditation. Model performance (97.7% accuracy, 96.0% BTT sensitivity, 99.2% IDA specificity, ROC-AUC 0.994) was measured on a held-out synthetic test set of 220 records only. Definitive diagnosis of hemoglobinopathies requires quantitative High-Performance Liquid Chromatography (HPLC) / Capillary Electrophoresis and molecular genetic testing.</font>",
                 body_style
             )
         ]
@@ -320,8 +319,8 @@ def generate_clinical_report_pdf(patient_data: dict, analysis_result: dict) -> b
     # --- SIGNATURE BLOCK ---
     sig_data = [
         [
-            Paragraph("<b>Analyzed By:</b><br/>THALA-AI Autonomous Inference Engine v2.4<br/>Model Hash: RF-8F-1190-OPT", table_cell),
-            Paragraph("<b>Reviewed & Validated By:</b><br/>____________________________________<br/>Consultant Hematopathologist / Lab Director", table_cell)
+            Paragraph("<b>Generated By:</b><br/>THALA-AI PRO educational demo<br/>Model: SVM (RBF kernel), 7 inputs, trained on synthetic data", table_cell),
+            Paragraph("<b>Status:</b><br/>Not reviewed or validated for clinical use.<br/>Not a medical device; no laboratory accreditation.", table_cell)
         ]
     ]
     sig_table = Table(sig_data, colWidths=[270, 270])

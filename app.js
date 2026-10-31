@@ -635,7 +635,7 @@ function renderDecisionSpace() {
     ctx.restore();
   }
 
-  // --- 4. COHORT SCATTER POINTS (1,190 HPLC Dataset) ---
+  // --- 4. COHORT SCATTER POINTS (1,190-record synthetic dataset, Google Gemini-generated; not real patients) ---
   if (!decisionSpaceData) {
     const bundle = getModelBundle();
     if (bundle && bundle.cohort) {
@@ -871,7 +871,7 @@ function applyPatientObject(p) {
 
   renderDecisionSpace();
   triggerInference();
-  showToast(`Loaded Cohort Record with Ground Truth: ${p.ground_truth_diagnosis}`);
+  showToast(`Loaded synthetic record (dataset label: ${p.ground_truth_diagnosis}) - not a real patient`);
 }
 
 function setFormValues(vals) {
@@ -896,10 +896,10 @@ function getFormValues() {
 
   return {
     age: ageVal,
-    patient_id: 'THL-PT-9042',
-    patient_name: 'Patient Sample',
+    patient_id: 'DEMO-INPUT',
+    patient_name: 'Demo input (not a patient)',
     gender: 'Unspecified',
-    referring_physician: 'Dr. Hematology Clinic',
+    referring_physician: 'Not applicable (educational demo)',
     clinical_notes: '',
 
     rbc_count: getParamVal('rbc_count'),
@@ -973,8 +973,9 @@ function runClientSideInference(patientData) {
   // Exact RBF SVM Decision Function
   const z = computeRbfKernelDecision(scaled, bundle);
 
-  // Platt Calibrated Probability
-  const probThal = 1.0 / (1.0 + Math.exp(bundle.probA * z + bundle.probB));
+  // Platt Calibrated Probability (scikit-learn convention: P(class 1) = 1 / (1 + exp(probA * f - probB)),
+  // where f is the SVC decision_function value; note the MINUS sign before probB)
+  const probThal = 1.0 / (1.0 + Math.exp(bundle.probA * z - bundle.probB));
   const probIda = 1.0 - probThal;
   const predClass = probThal >= 0.5 ? 1 : 0;
 
@@ -1046,11 +1047,11 @@ function runClientSideInference(patientData) {
     cbc_evaluated: cbcEval,
     recommendations: getClientRecommendations(predClass),
     divergence_notes: summary.agreement_pct < 75 ? [
-      `Diagnostic Divergence Noted: ${summary.total_indices - summary.agreement_count} of 8 classical formulas conflict with the AI. Classical heuristic rules (like Mentzer Index >= 13) rely on single ratios that often fail in overlapping microcytosis. The calibrated RBF Support Vector Machine integrates all 7 red cell indices simultaneously across a 97.73% validated boundary.`
+      `Diagnostic Divergence Noted: ${summary.total_indices - summary.agreement_count} of 8 classical formulas conflict with the AI. Classical heuristic rules (like Mentzer Index >= 13) rely on single ratios that often fail in overlapping microcytosis. The RBF Support Vector Machine integrates all 7 red cell indices simultaneously (97.7% accuracy on a held-out synthetic test set of 220 records; not clinically validated).`
     ] : [],
     patient_metadata: {
       age: `${patientData.age || 28} Years`,
-      patient_id: 'THL-PT-9042'
+      patient_id: 'DEMO-INPUT'
     }
   };
 }
@@ -1436,7 +1437,7 @@ async function downloadReportPdf() {
     return;
   }
 
-  showToast('Generating official clinical PDF report...');
+  showToast('Generating educational demo PDF (not for clinical use)...');
 
   const ageVal = elements.sliderAge ? `${elements.sliderAge.value} Years` : '28 Years';
 
@@ -1444,11 +1445,11 @@ async function downloadReportPdf() {
   try {
     const payload = {
       patient: {
-        patient_id: 'THL-PT-9042',
-        patient_name: 'Clinical Patient',
+        patient_id: 'DEMO-INPUT',
+        patient_name: 'Demo input (not a patient)',
         age: ageVal,
         gender: 'Unspecified',
-        referring_physician: 'Dr. Hematology Clinic'
+        referring_physician: 'Not applicable (educational demo)'
       },
       analysis: currentAnalysis
     };
@@ -1470,7 +1471,7 @@ async function downloadReportPdf() {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
-      showToast('Clinical PDF Report downloaded successfully!');
+      showToast('Demo PDF downloaded (educational use only, not for clinical use)');
       return;
     }
   } catch (_) {
@@ -1480,7 +1481,7 @@ async function downloadReportPdf() {
   // 2. Client-side PDF generation using jsPDF
   try {
     generateClientPdfReport(ageVal);
-    showToast('Clinical PDF Report downloaded successfully (In-Browser)!');
+    showToast('Demo PDF downloaded (educational use only, not for clinical use)');
   } catch (err) {
     console.error('jsPDF error:', err);
     // 3. Fallback: print preview
@@ -1517,16 +1518,17 @@ function generateClientPdfReport(ageVal) {
   doc.setTextColor(255, 255, 255);
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(14);
-  doc.text('THALA-AI CLINICAL DIAGNOSTIC CENTER', 48, 58);
+  doc.text('THALA-AI PRO - EDUCATIONAL DEMO (NOT A CLINICAL REPORT)', 48, 58);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(148, 163, 184);
-  doc.text('Advanced Hematopathology & Explainable AI Reference Laboratory | ISO 15189 Validated', 48, 72);
+  doc.text('Educational research prototype trained on synthetic data generated with Google Gemini.', 48, 70);
+  doc.text('Not a medical device; not for clinical use; no laboratory accreditation.', 48, 79);
 
   // Meta bar
   doc.setFontSize(8);
   doc.setTextColor(15, 23, 42);
-  doc.text(`Report ID: THL-PT-9042   |   Date: ${new Date().toLocaleDateString()}   |   Patient Age: ${ageVal}`, 36, 102);
+  doc.text(`Demo output   |   Date: ${new Date().toLocaleDateString()}   |   Age entered: ${ageVal}`, 36, 102);
 
   // Diagnosis Banner
   if (isThal) {
@@ -1536,7 +1538,7 @@ function generateClientPdfReport(ageVal) {
     doc.setTextColor(185, 28, 28);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text(`AI DIAGNOSIS: ${pred.predicted_label.toUpperCase()} (${(pred.prob_thalassemia * 100).toFixed(1)}% Probability)`, 48, 132);
+    doc.text(`MODEL PREDICTION (DEMO): ${pred.predicted_label.toUpperCase()} (${(pred.prob_thalassemia * 100).toFixed(1)}% Probability)`, 48, 132);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
@@ -1548,7 +1550,7 @@ function generateClientPdfReport(ageVal) {
     doc.setTextColor(4, 120, 87);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.text(`AI DIAGNOSIS: ${pred.predicted_label.toUpperCase()} (${(pred.prob_ida * 100).toFixed(1)}% Probability)`, 48, 132);
+    doc.text(`MODEL PREDICTION (DEMO): ${pred.predicted_label.toUpperCase()} (${(pred.prob_ida * 100).toFixed(1)}% Probability)`, 48, 132);
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(8);
     doc.setTextColor(100, 116, 139);
@@ -1667,10 +1669,11 @@ function generateClientPdfReport(ageVal) {
   y += 14;
   doc.setFontSize(7.5);
   doc.setTextColor(100, 116, 139);
-  doc.text('Analyzed by: THALA-AI Autonomous Inference Engine v2.4 (Support Vector Machine (RBF Kernel))', 36, y);
-  doc.text('Reviewed By: ___________________________________ (Hematopathologist)', 320, y);
+  doc.text('Generated by: THALA-AI PRO educational demo (SVM, RBF kernel, 7 inputs; trained on synthetic data)', 36, y);
+  y += 11;
+  doc.text('Not a medical device; not for clinical use; no laboratory accreditation. Not reviewed or validated for patient care.', 36, y);
 
-  doc.save('Thalassemia_AI_Diagnostic_Report.pdf');
+  doc.save('THALA-AI_Demo_Output_NOT_FOR_CLINICAL_USE.pdf');
 }
 
 // --- PRINT PREVIEW MODAL ---
@@ -1722,13 +1725,13 @@ function openPrintPreview() {
       <!-- Report Header -->
       <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #1e40af; padding-bottom: 12px; margin-bottom: 16px;">
         <div>
-          <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0;">THALA-AI CLINICAL DIAGNOSTIC CENTER</h2>
-          <div style="font-size: 0.75rem; color: #64748b;">Advanced Hematopathology & Explainable AI Reference Laboratory</div>
+          <h2 style="font-size: 1.3rem; font-weight: 800; color: #0f172a; margin: 0;">THALA-AI PRO - Educational Demo Output</h2>
+          <div style="font-size: 0.75rem; color: #64748b;">Research prototype trained on synthetic data generated with Google Gemini. Not a medical device; not for clinical use; no laboratory accreditation.</div>
         </div>
         <div style="text-align: right; font-size: 0.8rem;">
-          <div><b>Report:</b> THL-REF-9042</div>
+          <div><b>Demo output</b></div>
           <div><b>Date:</b> ${new Date().toLocaleDateString()}</div>
-          <div style="color: #0284c7; font-weight: bold;">CLINICAL VALIDATION COMPLETE</div>
+          <div style="color: #b91c1c; font-weight: bold;">NOT FOR CLINICAL USE</div>
         </div>
       </div>
 
@@ -1737,14 +1740,14 @@ function openPrintPreview() {
         <tr>
           <td style="padding: 6px 10px;"><b>Age:</b> ${ageVal}</td>
           <td style="padding: 6px 10px;"><b>Model:</b> Support Vector Machine (RBF Kernel, 102 Support Vectors)</td>
-          <td style="padding: 6px 10px;"><b>Specimen:</b> Whole Blood EDTA</td>
+          <td style="padding: 6px 10px;"><b>Input:</b> Values entered manually (demo)</td>
         </tr>
       </table>
 
       <!-- AI Diagnosis Banner -->
       <div style="background: ${isThal ? '#fef2f2' : '#f0fdf4'}; border: 1px solid ${isThal ? '#ef4444' : '#10b981'}; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px;">
         <div style="font-size: 0.75rem; font-weight: bold; color: ${isThal ? '#b91c1c' : '#047857'}; text-transform: uppercase;">
-          AI Support Vector Machine (SVM) Diagnosis:
+          SVM Model Prediction (educational demo, not a diagnosis):
         </div>
         <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 4px 0;">
           ${pred.predicted_label} (${(pred.prob_thalassemia * 100).toFixed(1)}% Thalassemia Probability)
@@ -1796,6 +1799,11 @@ function openPrintPreview() {
       <ul style="font-size: 0.78rem; color: #334155; padding-left: 20px; line-height: 1.5;">
         ${currentAnalysis.recommendations.map(r => `<li><b>${r.title}:</b> ${r.desc}</li>`).join('')}
       </ul>
+
+      <!-- Disclaimer -->
+      <div style="margin-top: 16px; padding: 10px 12px; border: 1px solid #f59e0b; background: #fffbeb; color: #78350f; font-size: 0.76rem; border-radius: 6px;">
+        <b>Disclaimer:</b> Educational research prototype trained on synthetic data generated with Google Gemini. Not a medical device; not for clinical use; no laboratory accreditation. Model performance (97.7% accuracy, 96.0% BTT sensitivity, 99.2% IDA specificity, ROC-AUC 0.994) was measured on a held-out synthetic test set of 220 records only.
+      </div>
     </div>
   `;
 

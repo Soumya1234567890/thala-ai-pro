@@ -2,9 +2,9 @@
 
 [![GitHub Pages](https://img.shields.io/badge/GitHub%20Pages-Live%20Demo-brightgreen?logo=github)](https://Soumya1234567890.github.io/thala-ai-pro/)
 [![Model](https://img.shields.io/badge/Model-Support%20Vector%20Machine%20(RBF%20Kernel)-blue?logo=scikitlearn)](https://scikit-learn.org/)
-[![Validation Cohort](https://img.shields.io/badge/Validation%20Cohort-1%2C190%20HPLC%20Records-purple)](#cohort-benchmark)
-[![Accuracy](https://img.shields.io/badge/Accuracy-99.9%25%20(100%25%20BTT%20Sensitivity)-success)](#model-performance)
-[![Sensitivity](https://img.shields.io/badge/Sensitivity%20(Recall)-100.0%25-red)](#model-performance)
+[![Validation Cohort](https://img.shields.io/badge/Validation%20Cohort-1%2C099%20Modelled%20(Table%207.2)-purple)](#cohort-benchmark)
+[![Accuracy](https://img.shields.io/badge/Accuracy-97.73%25-success)](#model-performance)
+[![Sensitivity](https://img.shields.io/badge/Sensitivity%20(Recall)-96.0%25-red)](#model-performance)
 [![License](https://img.shields.io/badge/License-MIT-lightgrey)](#license)
 
 > **THALA-AI PRO™** is a clinical decision-support web application and explainable artificial intelligence (XAI) screening suite for differentiating **Beta Thalassemia Trait (BTT)** from **Iron Deficiency Anemia (IDA)** using Complete Blood Count (CBC) red blood cell indices.
@@ -105,12 +105,12 @@ Displays consensus agreement percentage and warns of single-cutoff index diverge
 
 Evaluated on $n = 1,190$ confirmed clinical high-performance liquid chromatography (HPLC) records:
 
-| Evaluation Metric | Pure BTT vs. IDA ($n = 900$) | Total Cohort ($n = 1,183$) |
+| Evaluation Metric | Modelled Cohort ($n = 1,099$, Table 7.2) | Total Cohort ($n = 1,190$) |
 | :--- | :---: | :---: |
-| **Overall Accuracy** | **100.0%** | **96.11%** |
-| **Sensitivity (Recall for BTT)** | **100.0%** | **99.80%** |
-| **Specificity (IDA)** | **100.0%** | **93.31%** |
-| **Architecture** | Random Forest Classifier | 100 Decision Trees |
+| **Overall Accuracy** | **97.73%** | **96.11%** |
+| **Sensitivity (Recall for BTT)** | **96.0%** | **99.80%** |
+| **Specificity (IDA)** | **99.16%** | **93.31%** |
+| **Architecture** | Support Vector Machine (RBF) | Non-Linear SVC |
 | **Input Features** | 8 Automated RBC Indices | Standard Scaler Normalized |
 
 ---
@@ -140,10 +140,10 @@ Then visit `http://localhost:8080`.
 ├── index.html                 # Main web application interface (GitHub Pages entrypoint)
 ├── style.css                  # Bespoke vanilla CSS (Medical Dark & Clinical Day glassmorphism)
 ├── app.js                     # Unified controller (In-browser ML engine, Canvas, jsPDF, API fallback)
-├── model_data.js              # Pre-compiled 100-tree Random Forest & cohort benchmark data
-├── app.py                     # Optional FastAPI server (REST endpoints, SHAP TreeExplainer)
+├── model_data.js              # Pre-compiled Support Vector Machine (RBF) & cohort benchmark data
+├── app.py                     # Optional FastAPI server (REST endpoints, SHAP Kernel Attribution)
 ├── report_generator.py        # ReportLab PDF report generation engine
-├── best_thal_ida_classifier.joblib  # Trained Scikit-Learn Random Forest model
+├── best_thal_ida_classifier.joblib  # Trained Scikit-Learn Support Vector Machine (SVM) model
 ├── scaler (7).joblib          # Feature scaling parameters
 ├── RBC indices cleaned filled 2.xlsx # 1,190-sample clinical HPLC dataset
 ├── .github/workflows/deploy.yml # Automated GitHub Pages CI/CD workflow

@@ -32,23 +32,23 @@
           <span class="pill-label">Model:</span>
           <span class="pill-value">Support Vector Machine (RBF)</span>
         </div>
-        <div class="metric-pill pill-accuracy" title="Classification Accuracy on 1,190 Clinical HPLC Cohort">
+        <div class="metric-pill pill-accuracy" title="Classification Accuracy on Modelled Cohort (Table 7.2)">
           <span class="pill-dot dot-emerald"></span>
           <span class="pill-label">Accuracy:</span>
-          <span class="pill-value">99.9%</span>
-          <span class="pill-sub">(100% BTT Sensitivity)</span>
+          <span class="pill-value">97.73%</span>
+          <span class="pill-sub">(96.0% BTT Sensitivity)</span>
         </div>
         <div class="metric-pill pill-sensitivity" title="Sensitivity / Recall for Beta Thalassemia Detection">
           <span class="pill-dot dot-red"></span>
           <span class="pill-label">Sensitivity:</span>
-          <span class="pill-value">100.0%</span>
+          <span class="pill-value">96.0%</span>
         </div>
       </div>
     </div>
 
     <div class="header-actions">
-      <div class="status-pill" title="Calibrated on 1,190 Clinical HPLC Records">
-        <span>Cohort: <b>1,190 HPLC Cases</b></span>
+      <div class="status-pill" title="Modelled Cohort: 503 Thalassemia vs 596 IDA / Controls (Table 7.2)">
+        <span>Cohort: <b>1,099 Modelled (Table 7.2)</b></span>
       </div>
 
       <button id="themeToggleBtn" class="btn btn-secondary btn-icon-only" title="Toggle Clinical Day / Dark Theme">
@@ -377,7 +377,7 @@
               </svg>
               Explainable AI: Patient-Specific SHAP Attributions (RBF Kernel Attribution)
             </h3>
-            <span class="panel-subtitle">Decomposition of model decision trees: how each blood parameter drove the classification</span>
+            <span class="panel-subtitle">Decomposition of model decision boundaries: how each blood parameter drove the classification</span>
           </div>
 
           <div class="shap-legend">
@@ -536,32 +536,32 @@
                 <line x1="2" y1="12" x2="22" y2="12"/>
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
               </svg>
-              1,190 Clinical HPLC Cohort Reference Benchmark
+              1,099 Modelled HPLC Cohort Reference Benchmark (Table 7.2)
             </h3>
-            <span class="panel-subtitle">Validation against confirmed HPLC ground-truth patient population</span>
+            <span class="panel-subtitle">Validation against confirmed HPLC ground-truth patient population (Table 7.2)</span>
           </div>
         </div>
 
         <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 14px;">
           <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Total Evaluated Cohort</div>
-            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--cyan-accent);">1,190 Patients</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Cleaned HPLC Dataset</div>
+            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Modelled Cohort (Table 7.2)</div>
+            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: var(--cyan-accent);">1,099 Cases</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">Of 1,190 Total HPLC Records</div>
           </div>
           <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Thalassemia Spectrum</div>
-            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #f87171;">514 Cases</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">450 BTT + 64 Variants</div>
+            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Thalassemia Cohort</div>
+            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #f87171;">503 Cases</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">450 BTT + 53 Variants (Table 7.2)</div>
           </div>
           <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">IDA & Normal</div>
-            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #34d399;">676 Cases</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">496 IDA + 100 Mixed + 80 Normal</div>
+            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">IDA / Non-Thal Cohort</div>
+            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #34d399;">596 Cases</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">496 IDA + 100 Mixed (Table 7.2)</div>
           </div>
           <div style="background: var(--bg-input); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
-            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Highest Index Accuracy</div>
-            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #c084fc;">RDWI (82.9%)</div>
-            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">AI Model: 100% on Pure Cohort</div>
+            <div style="font-size: 0.7rem; color: var(--text-dim); text-transform: uppercase;">Validated Performance</div>
+            <div style="font-size: 1.25rem; font-weight: 800; font-family: var(--font-mono); color: #c084fc;">97.73% Accuracy</div>
+            <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 4px;">96.0% Sensitivity (SVM)</div>
           </div>
         </div>
       </div>

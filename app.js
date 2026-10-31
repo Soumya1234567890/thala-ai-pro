@@ -1,7 +1,7 @@
 /**
  * THALA-AI PRO™ - Universal In-Browser & API Machine Learning Controller
  * Supports dual-mode execution:
- * 1. Client-Side Mode: 100% in-browser Random Forest inference, Tree SHAP attributions,
+ * 1. Client-Side Mode: 100% in-browser Support Vector Machine (RBF) inference, Kernel SHAP attributions,
  *    concordance matrix, and jsPDF report generation for zero-backend GitHub Pages hosting.
  * 2. API Mode: Seamlessly connects to FastAPI backend if available.
  */
@@ -1046,7 +1046,7 @@ function runClientSideInference(patientData) {
     cbc_evaluated: cbcEval,
     recommendations: getClientRecommendations(predClass),
     divergence_notes: summary.agreement_pct < 75 ? [
-      `Diagnostic Divergence Noted: ${summary.total_indices - summary.agreement_count} of 8 classical formulas conflict with the AI. Classical heuristic rules (like Mentzer Index >= 13) rely on single ratios that often fail in overlapping microcytosis. The calibrated RBF Support Vector Machine integrates all 7 red cell indices simultaneously across a 99.89% verified boundary.`
+      `Diagnostic Divergence Noted: ${summary.total_indices - summary.agreement_count} of 8 classical formulas conflict with the AI. Classical heuristic rules (like Mentzer Index >= 13) rely on single ratios that often fail in overlapping microcytosis. The calibrated RBF Support Vector Machine integrates all 7 red cell indices simultaneously across a 97.73% validated boundary.`
     ] : [],
     patient_metadata: {
       age: `${patientData.age || 28} Years`,
@@ -1248,7 +1248,7 @@ async function triggerInference() {
     }
   }
 
-  // 2. Client-side fallback: 100% in-browser Random Forest & Tree Attribution engine
+  // 2. Client-side fallback: 100% in-browser Support Vector Machine (RBF) & Kernel Attribution engine
   const bundle = getModelBundle();
   if (!data && bundle) {
     try {
@@ -1490,6 +1490,15 @@ async function downloadReportPdf() {
 }
 
 function generateClientPdfReport(ageVal) {
+  const payload = getFormValues();
+  try {
+    const bundle = getModelBundle();
+    if (bundle) {
+      currentAnalysis = runClientSideInference(payload);
+    }
+  } catch (err) {
+    console.warn("PDF generation sync inference fallback:", err);
+  }
   if (!window.jspdf || !window.jspdf.jsPDF) {
     openPrintPreview();
     window.print();
@@ -1666,6 +1675,15 @@ function generateClientPdfReport(ageVal) {
 
 // --- PRINT PREVIEW MODAL ---
 function openPrintPreview() {
+  const payload = getFormValues();
+  try {
+    const bundle = getModelBundle();
+    if (bundle) {
+      currentAnalysis = runClientSideInference(payload);
+    }
+  } catch (err) {
+    console.warn("Print preview sync inference fallback:", err);
+  }
   if (!currentAnalysis) {
     showToast('Inference data not ready', 'error');
     return;
@@ -1726,7 +1744,7 @@ function openPrintPreview() {
       <!-- AI Diagnosis Banner -->
       <div style="background: ${isThal ? '#fef2f2' : '#f0fdf4'}; border: 1px solid ${isThal ? '#ef4444' : '#10b981'}; padding: 12px 16px; border-radius: 6px; margin-bottom: 16px;">
         <div style="font-size: 0.75rem; font-weight: bold; color: ${isThal ? '#b91c1c' : '#047857'}; text-transform: uppercase;">
-          AI Random Forest Diagnosis:
+          AI Support Vector Machine (SVM) Diagnosis:
         </div>
         <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin: 4px 0;">
           ${pred.predicted_label} (${(pred.prob_thalassemia * 100).toFixed(1)}% Thalassemia Probability)

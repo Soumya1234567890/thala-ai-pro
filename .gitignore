@@ -16,6 +16,7 @@ env/
 
 # Binary model & data files (model already embedded in model_data.js)
 *.pkl
+*.joblib
 *.xlsx
 
 # Python server files (not needed for GitHub Pages)

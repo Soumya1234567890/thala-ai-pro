@@ -100,9 +100,7 @@ Displays consensus agreement percentage and warns of single-cutoff index diverge
 ### 6. Example Presets & Random Synthetic-Record Tester
 * 🩸 **Case 1: Typical Beta Thal Trait Pattern**
 * 🧪 **Case 2: Severe Iron Deficiency Anemia (IDA)**
-* 🧬 **Case 3: Combined IDA + Thal Trait (Dual Profile)**: Demonstrates the dual presentation (erythrocytosis with severe anisocytosis) and triggers the dedicated Clinical Risk Advisory.
-* ⚠️ **Case 4: Equivocal Borderline (Mentzer ~13)**
-* 🧬 **Random Combined IDA + Thal (100 Cases)**: Samples directly from the 100-case combined cohort!
+* ⚠️ **Case 3: Equivocal Borderline (Mentzer ~13)**
 * 🎲 **Random Cohort Record (1,190 Dataset)**: Samples a record from the 1,190 dataset together with its ground-truth label!
 
 ---

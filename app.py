@@ -476,23 +476,6 @@ def predict_and_explain(patient: PatientInput):
             "The calibrated RBF Support Vector Machine integrates all 7 red cell indices simultaneously across a 97.73% validated boundary."
         )
 
-    # Clinical Heuristic: Detect Co-existing IDA & Beta Thalassemia Trait Dual Presentation
-    is_combined = bool(patient.mcv < 75.0 and patient.rdw_cv >= 16.5 and (patient.rbc_count >= 5.0 or mentzer_val < 12.5))
-    combined_risk = {
-        'detected': is_combined,
-        'title': 'CLINICAL RISK ALERT: SUSPECTED COMBINED IDA & BETA THALASSEMIA TRAIT',
-        'detail': (
-            f"Dual hematological presentation detected: Microcytosis and erythrocytosis "
-            f"(RBC {patient.rbc_count:.2f} × 10¹²/L, MCV {patient.mcv:.1f} fL, Mentzer {mentzer_val:.1f}) characteristic of Beta Thalassemia Trait, "
-            f"co-existing with marked anisocytosis (RDW-CV {patient.rdw_cv:.1f}%) and hypochromia (MCHC {patient.mchc:.1f} g/dL) characteristic of Iron Deficiency Anemia."
-        ),
-        'caveat': (
-            "Concomitant iron deficiency can artificially suppress HbA₂ synthesis in Beta Thalassemia Trait patients, "
-            "causing HPLC HbA₂ levels to fall below the diagnostic 3.5% threshold. Recommend Serum Ferritin / TIBC testing; "
-            "if iron deficient, replete iron and re-evaluate HPLC."
-        )
-    }
-
     return {
         'prediction': {
             'predicted_class': pred_class,
@@ -502,7 +485,6 @@ def predict_and_explain(patient: PatientInput):
             'confidence_tier': confidence_tier,
             'primary_risk_flag': 'HIGH RISK - THALASSEMIA TRAIT' if pred_class == 1 else 'LOW RISK - IDA SUSPECTED'
         },
-        'combined_risk': combined_risk,
         'shap_analysis': {
             'base_value': round(base_expected_val, 4),
             'features': shap_feature_list,
@@ -569,29 +551,8 @@ def get_presets():
             }
         },
         {
-            'id': 'combined_ida_btt',
-            'title': 'Case 3: Combined IDA & Beta Thal Trait (Dual Pathology)',
-            'subtitle': 'Erythrocytosis (RBC 5.38) & Microcytosis with Anisocytosis (RDW 19.9%) from 100-Patient Cohort',
-            'data': {
-                'patient_id': 'COMB-2026-100',
-                'patient_name': 'Ananya Das',
-                'age': '32_yrs',
-                'gender': 'Female',
-                'referring_physician': 'Dr. S. Mukherjee, Antenatal Clinic',
-                'rbc_count': 5.38,
-                'hct': 29.6,
-                'hemoglobin': 8.6,
-                'mcv': 57.6,
-                'mch': 15.8,
-                'mchc': 27.8,
-                'rdw_cv': 19.9,
-                'mentzer_index': 10.71,
-                'clinical_notes': 'Second trimester antenatal screening; microcytic polycythemia with marked anisocytosis. Serum Ferritin low (9 ng/mL). HPLC showed borderline HbA2 (3.2%) requiring iron repletion re-testing.'
-            }
-        },
-        {
             'id': 'borderline_dilemma',
-            'title': 'Case 4: Equivocal Borderline Microcytosis',
+            'title': 'Case 3: Equivocal Borderline Microcytosis',
             'subtitle': 'Mentzer Index exactly around 13.0 - Classical indices in conflict',
             'data': {
                 'patient_id': 'DEMO-EQV-1',
@@ -680,31 +641,6 @@ def get_random_patient_from_cohort():
         'mentzer_index': round(float(row['Mentzer Index']), 2),
         'ground_truth_diagnosis': str(row['HPLC Diagnosis']),
         'clinical_notes': f"Synthetic record (generated with Google Gemini) from the 1,190-record dataset; not a real patient. Dataset label: {row['HPLC Diagnosis']}."
-    }
-
-@app.get("/api/random-combined")
-def get_random_combined_patient():
-    comb_df = cohort_df[cohort_df['HPLC Diagnosis'] == 'Combined IDA and Beta Thalassemia Trait']
-    if len(comb_df) == 0:
-        comb_df = cohort_df
-    row = comb_df.sample(1).iloc[0]
-    return {
-        'patient_id': f"COMB-{random.randint(100, 999)}",
-        'patient_name': f"Combined Cohort Case #{row.name + 1}",
-        'age': str(row.get('Age', '32_yrs')),
-        'gender': random.choice(['Female', 'Male']),
-        'referring_physician': 'Study Cohort Registry',
-        'rbc_count': round(float(row['RBC Count']), 2),
-        'hct': round(float(row['HCT']), 1) if pd.notna(row['HCT']) else 29.6,
-        'hemoglobin': round(float(row['Hemoglobin']), 1),
-        'mcv': round(float(row['MCV']), 1),
-        'mch': round(float(row['MCH']), 1),
-        'mchc': round(float(row['MCHC']), 1),
-        'rdw_cv': round(float(row['RDW-CV']), 1) if pd.notna(row['RDW-CV']) else 19.9,
-        'mentzer_index': round(float(row['Mentzer Index']), 2),
-        'ground_truth_diagnosis': str(row['HPLC Diagnosis']),
-        'category': 'COMBINED',
-        'clinical_notes': f"Record from the 100-case Combined IDA & BTT cohort; Ground-truth label: {row['HPLC Diagnosis']}."
     }
 
 @app.get("/api/cohort-stats")

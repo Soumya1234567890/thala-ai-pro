@@ -95,7 +95,6 @@ const elements = {
   previewReportBtn: document.getElementById('previewReportBtn'),
   downloadPdfBtn: document.getElementById('downloadPdfBtn'),
   btnRandomCohort: document.getElementById('btnRandomCohort'),
-  btnRandomCombined: document.getElementById('btnRandomCombined'),
   autoSyncMentzer: document.getElementById('autoSyncMentzer'),
   mentzerSyncStatus: document.getElementById('mentzerSyncStatus'),
   recalculateBtn: document.getElementById('recalculateBtn'),
@@ -118,8 +117,6 @@ const elements = {
   dialMeter: document.getElementById('dialMeter'),
   dialPercentage: document.getElementById('dialPercentage'),
   dialConfidence: document.getElementById('dialConfidence'),
-  combinedAlertCard: document.getElementById('combinedAlertCard'),
-  combinedAlertDetail: document.getElementById('combinedAlertDetail'),
 
   // SHAP
   shapBaseVal: document.getElementById('shapBaseVal'),
@@ -436,12 +433,6 @@ function setupEventListeners() {
   elements.modalDownloadPdfActionBtn.addEventListener('click', () => {
     downloadReportPdf();
   });
-
-  if (elements.btnRandomCombined) {
-    elements.btnRandomCombined.addEventListener('click', () => {
-      loadRandomCombinedPatient();
-    });
-  }
 
   if (elements.btnRandomCohort) {
     elements.btnRandomCohort.addEventListener('click', async () => {
@@ -769,7 +760,7 @@ function renderDecisionSpace() {
 const FALLBACK_PRESETS = [
   {
     id: 'btt_classic',
-    title: 'Case 1: Confirmed Beta Thal Trait',
+    title: 'Case 1: Typical Beta Thal Trait Pattern',
     data: {
       rbc_count: 5.82, hemoglobin: 9.8, hct: 32.5, mcv: 56.8, mch: 17.1, mchc: 30.1, rdw_cv: 14.1, mentzer_index: 9.76, age: 28
     }
@@ -782,15 +773,8 @@ const FALLBACK_PRESETS = [
     }
   },
   {
-    id: 'combined_ida_btt',
-    title: 'Case 3: Combined IDA + Thal Trait (Dual Profile)',
-    data: {
-      rbc_count: 5.38, hemoglobin: 8.6, hct: 29.6, mcv: 57.6, mch: 15.8, mchc: 27.8, rdw_cv: 19.9, mentzer_index: 10.71, age: 32
-    }
-  },
-  {
     id: 'borderline_dilemma',
-    title: 'Case 4: Equivocal Borderline (Mentzer ~13)',
+    title: 'Case 3: Equivocal Borderline (Mentzer ~13)',
     data: {
       rbc_count: 5.08, hemoglobin: 11.3, hct: 35.2, mcv: 69.1, mch: 22.1, mchc: 31.9, rdw_cv: 14.8, mentzer_index: 13.6, age: 20
     }
@@ -861,36 +845,6 @@ function applyPreset(presetId) {
   showToast(`Loaded ${preset.title}`);
 }
 
-function loadRandomCombinedPatient() {
-  const bundle = getModelBundle();
-  let pool = [];
-  if (bundle && bundle.combined_cohort && bundle.combined_cohort.length > 0) {
-    pool = bundle.combined_cohort;
-  } else if (bundle && bundle.random_pool) {
-    pool = bundle.random_pool.filter(p => 
-      p.category === 'COMBINED' || 
-      (p.ground_truth_diagnosis && p.ground_truth_diagnosis.toLowerCase().includes('combined'))
-    );
-  }
-  if (!pool || pool.length === 0) {
-    pool = [
-      { patient_id: "COMB-199", age: "40_yrs", rbc_count: 5.71, hemoglobin: 8.8, hct: 32.3, mcv: 56.6, mch: 15.7, mchc: 27.8, rdw_cv: 26.2, mentzer_index: 9.92, ground_truth_diagnosis: "Combined IDA and Beta Thalassemia Trait", category: "COMBINED" },
-      { patient_id: "COMB-201", age: "41_yrs", rbc_count: 4.52, hemoglobin: 8.4, hct: 27.2, mcv: 60.1, mch: 17.3, mchc: 28.8, rdw_cv: 16.7, mentzer_index: 13.28, ground_truth_diagnosis: "Combined IDA and Beta Thalassemia Trait", category: "COMBINED" },
-      { patient_id: "COMB-204", age: "16_yrs", rbc_count: 5.80, hemoglobin: 11.3, hct: 35.0, mcv: 61.3, mch: 17.4, mchc: 28.3, rdw_cv: 21.9, mentzer_index: 10.57, ground_truth_diagnosis: "Combined IDA and Beta Thalassemia Trait", category: "COMBINED" },
-      { patient_id: "COMB-213", age: "1_yrs", rbc_count: 5.56, hemoglobin: 8.3, hct: 29.0, mcv: 52.1, mch: 15.4, mchc: 29.5, rdw_cv: 21.0, mentzer_index: 9.37, ground_truth_diagnosis: "Combined IDA and Beta Thalassemia Trait", category: "COMBINED" },
-      { patient_id: "COMB-216", age: "34_yrs", rbc_count: 5.15, hemoglobin: 9.2, hct: 33.4, mcv: 64.9, mch: 17.4, mchc: 26.8, rdw_cv: 22.1, mentzer_index: 12.58, ground_truth_diagnosis: "Combined IDA and Beta Thalassemia Trait", category: "COMBINED" }
-    ];
-  }
-
-  const p = pool[Math.floor(Math.random() * pool.length)];
-  applyPatientObject(p);
-
-  document.querySelectorAll('.preset-chip').forEach(c => c.classList.remove('active'));
-  if (elements.btnRandomCombined) {
-    elements.btnRandomCombined.classList.add('active');
-  }
-  showToast(`Loaded Random Combined Case (${p.patient_id}): ${p.ground_truth_diagnosis || 'Combined IDA + BTT'}`);
-}
 
 async function loadRandomCohortPatient() {
   // If running locally on FastAPI port 8000, attempt backend fetch
@@ -1095,15 +1049,6 @@ function runClientSideInference(patientData) {
   const maxProb = Math.max(probThal, probIda);
   const confidenceTier = maxProb >= 0.90 ? "Very High Confidence" : (maxProb >= 0.70 ? "High Confidence" : "Borderline Confidence");
 
-  // Clinical Heuristic: Detect Co-existing IDA & Beta Thalassemia Trait (100-case study cohort Table 7.2)
-  const isCombined = (mcv < 75.0 && rdw >= 16.5 && (rbc >= 5.0 || mentzer < 12.5));
-  const combinedRisk = {
-    detected: isCombined,
-    title: 'CLINICAL RISK ALERT: SUSPECTED COMBINED IDA & BETA THALASSEMIA TRAIT',
-    detail: `Dual hematological presentation detected: Microcytosis and erythrocytosis (RBC ${round(rbc, 2)} × 10¹²/L, MCV ${round(mcv, 1)} fL, Mentzer ${round(mentzer, 1)}) characteristic of Beta Thalassemia Trait, co-existing with marked anisocytosis (RDW-CV ${round(rdw, 1)}%) and hypochromia (MCHC ${round(mchc, 1)} g/dL) characteristic of Iron Deficiency Anemia.`,
-    caveat: `Critical Diagnostic Trap: Concomitant iron deficiency can artificially suppress HbA₂ synthesis in Beta Thalassemia Trait patients, causing HPLC HbA₂ levels to fall below the diagnostic 3.5% threshold. Recommend Serum Ferritin / TIBC testing; if iron deficient, replete iron and re-evaluate HPLC.`
-  };
-
   return {
     prediction: {
       predicted_class: predClass,
@@ -1114,7 +1059,6 @@ function runClientSideInference(patientData) {
       confidence_tier: confidenceTier,
       primary_risk_flag: predClass === 1 ? 'HIGH RISK - THALASSEMIA TRAIT' : 'LOW RISK - IDA SUSPECTED'
     },
-    combined_risk: combinedRisk,
     shap_analysis: {
       base_value: bundle.base_value || 0.461,
       features: shapFeatures,
@@ -1351,23 +1295,11 @@ async function triggerInference() {
 // --- RENDER COMPLETE RESULTS ---
 function renderDiagnosticResults(data) {
   renderVerdictHero(data.prediction);
-  renderCombinedRiskAlert(data.combined_risk);
   renderShapAttributions(data.shap_analysis);
   renderConcordanceMatrix(data.indices, data.concordance_summary, data.divergence_notes);
   renderRecommendations(data.recommendations);
 }
 
-function renderCombinedRiskAlert(combinedRisk) {
-  if (!elements.combinedAlertCard) return;
-  if (combinedRisk && combinedRisk.detected) {
-    elements.combinedAlertCard.style.display = 'block';
-    if (elements.combinedAlertDetail) {
-      elements.combinedAlertDetail.textContent = combinedRisk.detail;
-    }
-  } else {
-    elements.combinedAlertCard.style.display = 'none';
-  }
-}
 
 // 1. Verdict & Probability Dial
 function renderVerdictHero(pred) {
@@ -1650,21 +1582,6 @@ function generateClientPdfReport(ageVal) {
 
   // Section 1: CBC Table
   let y = 175;
-  if (currentAnalysis.combined_risk?.detected) {
-    doc.setFillColor(255, 251, 235);
-    doc.setDrawColor(217, 119, 6);
-    doc.rect(36, 162, 540, 30, 'FD');
-    doc.setTextColor(180, 83, 9);
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.text('CLINICAL ALERT: SUSPECTED COMBINED IDA & BETA THALASSEMIA TRAIT (DUAL PATHOLOGY)', 44, 174);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(6.8);
-    doc.setTextColor(120, 53, 15);
-    doc.text('Erythrocytosis & microcytosis suggest BTT, co-existing with marked anisocytosis (RDW-CV >= 16.5%) indicating IDA.', 44, 182);
-    doc.text('Caveat: Concomitant iron deficiency suppresses HbA2; re-screen with HPLC following therapeutic iron trial.', 44, 189);
-    y = 204;
-  }
 
   doc.setTextColor(30, 64, 175);
   doc.setFont('helvetica', 'bold');
@@ -1863,20 +1780,6 @@ function openPrintPreview() {
           Confidence Level: <b>${pred.confidence_tier}</b> | Primary Risk Flag: <b>${pred.primary_risk_flag}</b>
         </div>
       </div>
-
-      ${currentAnalysis.combined_risk?.detected ? `
-      <div style="background: #fffbeb; border: 1.5px solid #d97706; border-left: 5px solid #d97706; padding: 12px 14px; border-radius: 6px; margin-bottom: 16px;">
-        <div style="font-size: 0.76rem; font-weight: 800; color: #b45309; text-transform: uppercase;">
-          ⚠️ CLINICAL RISK ALERT: SUSPECTED COMBINED IDA &amp; BETA THALASSEMIA TRAIT
-        </div>
-        <div style="font-size: 0.78rem; color: #92400e; margin-top: 4px; line-height: 1.45;">
-          ${currentAnalysis.combined_risk.detail}
-        </div>
-        <div style="font-size: 0.74rem; color: #78350f; margin-top: 6px; font-weight: 600;">
-          <b>Diagnostic Advisory:</b> Concomitant iron deficiency can artificially suppress HbA₂ synthesis below 3.5%, masking Thalassemia Trait on HPLC. Measure Serum Ferritin/TIBC; re-screen post-iron repletion.
-        </div>
-      </div>
-      ` : ''}
 
       <!-- CBC Table -->
       <h4 style="font-size: 0.95rem; margin: 12px 0 6px; color: #1e40af;">1. Complete Blood Count & Red Cell Indices</h4>
